@@ -8,7 +8,16 @@ from fastapi import FastAPI, Request, status
 from fastapi.responses import JSONResponse, RedirectResponse
 
 import _config
-from linked_roles import LinkedRolesOAuth2, NotFound, OAuth2Scopes, RateLimited, RolePlatform, Unauthorized
+from linked_roles import (
+    LinkedRolesOAuth2,
+    OAuth2Scopes,
+    OAuth2Unauthorized,
+    RateLimited,
+    RolePlatform,
+    Unauthorized,
+    User,
+    UserNotFound,
+)
 
 _log = logging.getLogger(__name__)
 
@@ -61,16 +70,16 @@ async def verified_role(code: str):
 
 
 @app.post('/update-role-metadata')
-async def update_role_metadata(user_id: int):
+async def update_role_metadata(user_id: str):
 
     user = client.get_user(id=user_id)
 
     if user is None:
-        raise NotFound(f'User with ID {user_id} not found')
+        raise UserNotFound(f'User with ID {user_id} not found')
 
     tokens = user.get_tokens()
     if tokens is None:
-        raise Unauthorized('User is not connected to Linked Roles')
+        raise OAuth2Unauthorized('User is not connected to Linked Roles')
 
     if tokens.is_expired():
         await tokens.refresh()
@@ -86,12 +95,17 @@ async def update_role_metadata(user_id: int):
     await user.edit_role_metadata(platform=platform)
 
 
-@app.exception_handler(Unauthorized)
+@app.exception_handler(UserNotFound)
 async def unauthorized_exception_handler(r: Request, e: Unauthorized):
     return JSONResponse(
         status_code=status.HTTP_401_UNAUTHORIZED,
         content={'error': 'Unauthorized', 'message': e.message},
     )
+
+
+@app.exception_handler(UserNotFound)
+async def not_found_exception_handler(r: Request, e: UserNotFound):
+    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'error': 'Not found', 'message': e.message})
 
 
 @app.exception_handler(RateLimited)
@@ -100,8 +114,3 @@ async def rate_limited_exception_handler(r: Request, e: RateLimited):
         status_code=status.HTTP_429_TOO_MANY_REQUESTS,
         content={'error': 'Rate limited', 'retry_after': e.retry_after, 'message': e.message},
     )
-
-
-@app.exception_handler(NotFound)
-async def not_found_exception_handler(r: Request, e: NotFound):
-    return JSONResponse(status_code=status.HTTP_404_NOT_FOUND, content={'error': 'Not found', 'message': e.message})
