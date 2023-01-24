@@ -14,9 +14,14 @@
 
 <!-- https://github.com/catppuccin color style -->
 
-## Installation:
+## Installation
+Windows:
 ```sh
-pip install linked-roles
+$ pip install -U linked-roles
+```
+Linux/MacOS:
+```sh
+$ python3 -m pip install -U linked-roles
 ```
 
 ## FastAPI Example:
@@ -69,7 +74,7 @@ async def verified_role(code: str):
     return 'Verified role successfully'
 ```
 
-# Register Example:
+## Register Example:
 ```py
 import asyncio
 
