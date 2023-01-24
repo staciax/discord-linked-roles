@@ -15,13 +15,8 @@
 <!-- https://github.com/catppuccin color style -->
 
 ## Installation
-Windows:
 ```sh
 $ pip install -U linked-roles
-```
-Linux/MacOS:
-```sh
-$ python3 -m pip install -U linked-roles
 ```
 
 ## FastAPI Example:
