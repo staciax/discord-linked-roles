@@ -19,13 +19,13 @@
 pip install linked-roles
 ```
 
-## FastAPI Examples:
+## FastAPI Example:
 ```py
-from fastapi import FastAPI, status
+from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 import config
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, OAuth2Unauthorized, RolePlatform
+from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RolePlatform
 
 app = FastAPI(title='Linked Roles OAuth2')
 
@@ -46,7 +46,7 @@ async def startup():
 async def shutdown():
     await client.close()
 
-@app.get('/linked-role', status_code=status.HTTP_302_FOUND)
+@app.get('/linked-role')
 async def linked_roles():
     url = client.get_oauth_url()
     return RedirectResponse(url=url)
@@ -69,7 +69,7 @@ async def verified_role(code: str):
     return 'Verified role successfully'
 ```
 
-# Register Examples:
+# Register Example:
 ```py
 import asyncio
 
@@ -124,6 +124,19 @@ if __name__ == '__main__':
     asyncio.run(main())
 
 ```
+## Config Example:
+```py
+DISCORD_TOKEN = '<your bot token>'
+DISCORD_CLIENT_ID = '<your client id>'
+DISCORD_CLIENT_SECRET = '<your client secret>'
+DISCORD_REDIRECT_URI = 'http://localhost:8000/verified-role'  # example redirect uri
+COOKIE_SECRET = '<your cookie secret>'
+
+# cookie secret can be generated with:
+import uuid
+>> uuid.uuid4().hex
+```
+
 ## TODO:
 - [ ] Add more examples
 - [ ] Add documentation
