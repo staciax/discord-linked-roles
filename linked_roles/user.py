@@ -180,5 +180,7 @@ class User(BaseUser):
                     if get_metadata.data_type is not None:
                         if not isinstance(metadata.value, get_metadata.data_type):
                             raise TypeError(f'Role metadata {metadata.key!r} value must be {get_metadata.data_type!r}')
-
-            return await self.client.edit_user_application_role_connection(self, platform)
+            platform = await self.client.edit_user_application_role_connection(self, platform)
+            if platform is not None:
+                self._role_platform = platform
+        return self._role_platform

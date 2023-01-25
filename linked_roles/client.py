@@ -252,23 +252,20 @@ class LinkedRolesOAuth2:
         Optional[:class:`RolePlatform`]
             The role platform.
         """
-        try:
-            tokens = user.get_tokens()
-            if tokens is None:
-                raise ValueError('User does not have tokens')
-            after = await self._http.put_user_application_role_connection(tokens.access_token, platform.to_dict())
-        except Exception as e:
-            _log.error(f'Error while updating user application role connection: {e}')
-        else:
-            after_platform = RolePlatform.from_dict(after)
+        tokens = user.get_tokens()
+        if tokens is None:
+            raise ValueError('User does not have tokens')
+        after = await self._http.put_user_application_role_connection(tokens.access_token, platform.to_dict())
+        if after is not None:
+            platform = RolePlatform.from_dict(after)
             try:
                 await self.on_user_application_role_connection_update(
-                    user=user, before=user.__orginal_role_platform__ or after_platform, after=after_platform
+                    user=user, before=user.__orginal_role_platform__ or platform, after=platform
                 )
             except Exception as e:
                 _log.error(f'event on_user_application_role_connection_update raised an exception: {e}')
-            user.__orginal_role_platform__ = after_platform
-            return after_platform
+            user.__orginal_role_platform__ = platform
+        return platform
 
     async def on_user_application_role_connection_update(
         self,
