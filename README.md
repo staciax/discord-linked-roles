@@ -25,7 +25,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 import config
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RolePlatform
+from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RolePlatform, UserNotFound
 
 app = FastAPI(title='Linked Roles OAuth2')
 
@@ -57,12 +57,15 @@ async def verified_role(code: str):
     tokens = await client.get_oauth2_tokens(code)
     user = await client.fetch_user(tokens=tokens)
 
+    if user is None:
+        raise UserNotFound('User not found')
+
     platform = RolePlatform(name='VALORANT', username='STACIA#1234')
-    platform.set_metadata(key='matches', value=100)
-    platform.set_metadata(key='winrate', value=50)
-    platform.set_metadata(key='combat_score', value=10)
-    platform.set_metadata(key='last_update', value=datetime.datetime.now())
-    platform.set_metadata(key='verified', value=True)
+    platform.add_metadata(key='matches', value=100)
+    platform.add_metadata(key='winrate', value=50)
+    platform.add_metadata(key='combat_score', value=10)
+    platform.add_metadata(key='last_update', value=datetime.datetime.now())
+    platform.add_metadata(key='verified', value=True)
 
     await user.edit_role_metadata(platform=platform)
 
@@ -137,10 +140,14 @@ import uuid
 >> uuid.uuid4().hex
 ```
 
+## More Examples:
+- fastapi more examples: [examples/fastapi](examples/fastapi_.py)
+
 ## TODO:
 - [ ] Add more examples
 - [ ] Add documentation
 - [ ] Add database support (postgresql, sqlite, etc.) ?
+- [ ] add more class error
 
 <!-- code style, inspiration is discord.py -->
 ## Code Style Inspiration
