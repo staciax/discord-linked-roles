@@ -15,6 +15,7 @@ __all__: Tuple[str, ...] = (
     'InternalServerError',
     'RateLimited',
     'UserNotFound',
+    'PlatformNotFound',
     'OAuth2Unauthorized',
 )
 
@@ -57,6 +58,14 @@ class RateLimited(HTTPException):
 
 class UserNotFound(Exception):
     """Exception that's thrown when the user is not found in the database."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+
+class PlatformNotFound(Exception):
+    """Exception that's thrown when the platform is not found in the database."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message)

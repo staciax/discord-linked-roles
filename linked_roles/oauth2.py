@@ -12,6 +12,32 @@ if TYPE_CHECKING:
 
 
 class OAuth2Token:
+    """
+    Represents an OAuth2 token.
+
+    Parameters
+    ----------
+    client : :class:`LinkedRolesOAuth2`
+        The client of the token.
+    data : :class:`OAuth2TokenPayload`
+        The data of the token.
+    Attributes
+    ----------
+    access_token : :class:`str`
+        The access token of the token.
+    refresh_token : :class:`str`
+        The refresh token of the token.
+    expires_in : :class:`int`
+        The expires in of the token.
+    expires_at : :class:`datetime.datetime`
+        The expires at of the token.
+    Methods
+    -------
+    is_expired() -> :class:`bool`
+        Returns whether the token is expired.
+    refresh()
+        Refreshes the token.
+    """
 
     if TYPE_CHECKING:
         access_token: str

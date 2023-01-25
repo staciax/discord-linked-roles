@@ -61,7 +61,7 @@ class RoleMetadata(TypedDict):
 class UserRoleConnection(TypedDict):
     platform_name: str
     platform_username: str
-    metadata: Dict[str, str]
+    metadata: Dict[str, Any]
 
 
 class AppRoleConnectionMetadataRecord(TypedDict):
@@ -90,6 +90,8 @@ def validate_redirect_url(url: Optional[str]) -> Optional[str]:
 
 class Route:
 
+    """Represents an HTTP route."""
+
     BASE: ClassVar[str] = 'https://discord.com/api/v10'
 
     def __init__(
@@ -114,6 +116,9 @@ class Route:
 
 
 class HTTPClient:
+
+    """Represents an HTTP client for interacting with the Discord API."""
+
     def __init__(
         self,
         client_id: str,

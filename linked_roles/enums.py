@@ -8,6 +8,8 @@ from typing import Optional, Tuple, Type, Union
 
 __all__: Tuple[str, ...] = ('AppRoleConnectionMetadataRecordType', 'OAuth2Scopes')
 
+# numpydoc style
+
 
 class AppRoleConnectionMetadataRecordType(int, Enum):
     interger_less_than_or_equal = 1

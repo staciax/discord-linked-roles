@@ -28,6 +28,29 @@ if TYPE_CHECKING:
 
 
 class LinkedRolesOAuth2:
+    """
+    A client for the Linked Roles API.
+
+    Parameters
+    ----------
+    client_id : :class:`str`
+        The client ID of the application.
+    client_secret : Optional[:class:`str`]
+        The client secret of the application.
+    redirect_uri : Optional[:class:`str`]
+        The redirect URI of the application.
+    token :
+        The token of the application.
+    scopes : Tuple[:class:`str`, ...]
+        The scopes of the application.
+    state : Optional[:class:`str`]
+        The state of the application.
+    proxy : Optional[:class:`str`]
+        The proxy of the application.
+    proxy_auth : Optional[:class:`aiohttp.BasicAuth`]
+        The proxy auth of the application.
+    """
+
     def __init__(
         self,
         client_id: str,
@@ -69,6 +92,9 @@ class LinkedRolesOAuth2:
             await self.close()
 
     async def start(self):
+        """
+        Starts the client.
+        """
         await self._http.start()
         if self._http.token is not None:
             role_connections_records = await self._http.get_application_role_connection_metadata_records()
@@ -78,33 +104,84 @@ class LinkedRolesOAuth2:
             self._role_metadat_is_fetched = True
 
     async def close(self) -> None:
+        """
+        Closes the client.
+        """
         if self._is_closed:
             return
         self._is_closed = True
         await self._http.close()
 
     def clear(self) -> None:
+        """
+        Clears the client.
+        """
         self._role_metadata.clear()
         self._users.clear()
         self._role_metadat_is_fetched = False
         self._http.clear()
 
     def is_closed(self) -> bool:
+        """
+        Whether the client is closed.
+        Returns
+        -------
+        :class:`bool`
+            Whether the client is closed.
+        """
         return self._is_closed
 
     def is_role_metadata_fetched(self) -> bool:
+        """
+        Whether the role metadata is fetched.
+        Returns
+        -------
+        :class:`bool`
+            Whether the role metadata is fetched.
+        """
         return self._role_metadat_is_fetched
 
     def get_oauth_url(self) -> str:
+        """
+        Gets the OAuth URL.
+        Returns
+        -------
+        :class:`str`
+            The OAuth URL.
+        """
         return self._http.get_oauth_url()
 
     async def get_oauth2_tokens(self, code: str) -> OAuth2Token:
+        """
+        Gets the OAuth2 tokens.
+        Parameters
+        ----------
+        code : :class:`str`
+            The code.
+        Returns
+        -------
+        :class:`OAuth2Token`
+            The OAuth2 token.
+        """
         data = await self._http.get_oauth2_tokens(code)
         return OAuth2Token(self, data)
 
     async def register_role_metadata(
         self, records: Tuple[RoleMetadataRecord, ...], force: bool = False
     ) -> List[RoleMetadataRecord]:
+        """
+        Registers the role metadata.
+        Parameters
+        ----------
+        records : Tuple[:class:`RoleMetadataRecord`, ...]
+            The role metadata records.
+        force : Optional[:class:`bool`]
+            Whether to force register the role metadata.
+        Returns
+        -------
+        :class:List[:class:`RoleMetadataRecord`]
+            The registered role metadata records.
+        """
         payload = []
         for record in records:
             if record.key not in self._role_metadata and not force:
@@ -115,9 +192,31 @@ class LinkedRolesOAuth2:
         return [RoleMetadataRecord.from_dict(record) for record in data]
 
     def get_role_metadata(self, key: str) -> Optional[RoleMetadataRecord]:
+        """
+        Gets the role metadata by it's key.
+        Parameters
+        ----------
+        key : :class:`str`
+            The key.
+        Returns
+        -------
+        Optional[:class:`RoleMetadataRecord`]
+            The role metadata record.
+        """
         return self._role_metadata.get(key)
 
     async def fetch_user(self, tokens: OAuth2Token) -> Optional[User]:
+        """
+        Fetches the user.
+        Parameters
+        ----------
+        tokens : :class:`OAuth2Token`
+            The OAuth2 token.
+        Returns
+        -------
+        Optional[:class:`User`]
+            The user.
+        """
         data = await self._http.get_user(tokens.access_token)
         if data is None:
             return None
@@ -126,9 +225,33 @@ class LinkedRolesOAuth2:
         return user
 
     def get_user(self, id: Union[str, int]) -> Optional[User]:
+        """
+        Gets the user by it's id.
+        Parameters
+        ----------
+        id : Union[:class:`str`, :class:`int`]
+            The user id.
+        Returns
+        -------
+        Optional[:class:`User`]
+            The user.
+        """
         return self._users.get(str(id))
 
     async def edit_user_application_role_connection(self, user: User, platform: RolePlatform) -> Optional[RolePlatform]:
+        """
+        Edits the user application role connection.
+        Parameters
+        ----------
+        user : :class:`User`
+            The user.
+        platform : :class:`RolePlatform`
+            The role platform.
+        Returns
+        -------
+        Optional[:class:`RolePlatform`]
+            The role platform.
+        """
         try:
             tokens = user.get_tokens()
             if tokens is None:
@@ -153,4 +276,15 @@ class LinkedRolesOAuth2:
         before: RolePlatform,
         after: RolePlatform,
     ) -> None:
+        """
+        Called when a user's application role connection is updated.
+        Parameters
+        ----------
+        user : :class:`User`
+            The user.
+        before : :class:`RolePlatform`
+            The role platform before the update.
+        after : :class:`RolePlatform`
+            The role platform after the update.
+        """
         pass
