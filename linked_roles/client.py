@@ -103,7 +103,7 @@ class LinkedRolesOAuth2:
         return OAuth2Token(self, data)
 
     async def register_role_metadata(
-        self, records: List[RoleMetadataRecord], force: bool = False
+        self, records: Tuple[RoleMetadataRecord, ...], force: bool = False
     ) -> List[RoleMetadataRecord]:
         payload = []
         for record in records:

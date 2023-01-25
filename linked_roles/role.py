@@ -130,7 +130,7 @@ class RoleMetadataRecord(Generic[PlatformT]):
         *,
         key: str,
         name: str,
-        type: RoleMetadataType,
+        type: Union[RoleMetadataType, int],
         description: Optional[str] = None,
         name_localizations: Optional[Dict[str, str]] = None,
         description_localizations: Optional[Dict[str, str]] = None,

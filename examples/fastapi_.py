@@ -15,7 +15,6 @@ from linked_roles import (
     RateLimited,
     RolePlatform,
     Unauthorized,
-    User,
     UserNotFound,
 )
 
@@ -57,12 +56,15 @@ async def verified_role(code: str):
     tokens = await client.get_oauth2_tokens(code)
     user = await client.fetch_user(tokens=tokens)
 
+    if user is None:
+        raise UserNotFound('User not found')
+
     platform = RolePlatform(name='VALORANT', username='STACIA#1234')
-    platform.set_metadata(key='matches', value=100)
-    platform.set_metadata(key='winrate', value=50)
-    platform.set_metadata(key='combat_score', value=10)
-    platform.set_metadata(key='last_update', value=datetime.datetime.now())
-    platform.set_metadata(key='verified', value=True)
+    platform.add_metadata(key='matches', value=100)
+    platform.add_metadata(key='winrate', value=50)
+    platform.add_metadata(key='combat_score', value=10)
+    platform.add_metadata(key='last_update', value=datetime.datetime.now())
+    platform.add_metadata(key='verified', value=True)
 
     await user.edit_role_metadata(platform=platform)
 
@@ -85,7 +87,8 @@ async def update_role_metadata(user_id: str):
         await tokens.refresh()
 
     platform = user.get_role_platform()
-    platform.username = 'STACIA#4321'
+    if platform is None:
+        platform = RolePlatform(name='VALORANT', username=user.username)
     platform.edit_metadata(key='matches', value=5000)
     platform.edit_metadata(key='winrate', value=5000)
     platform.edit_metadata(key='combat_score', value=100000)
