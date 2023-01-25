@@ -62,7 +62,7 @@ class RolePlatform:
     def get_metadata(self, key: str) -> Optional[RoleMetadata]:
         return self._metadata.get(key)
 
-    def set_metadata(self, key: str, value: MetadataDataType) -> None:
+    def add_metadata(self, key: str, value: MetadataDataType) -> None:
         metadata = self.get_metadata(key)
         if metadata is not None:
             raise ValueError(f'{key!r} already exists')
