@@ -125,7 +125,6 @@ class LinkedRolesOAuth2:
         return user
 
     def get_user(self, id: Union[str, int]) -> Optional[User]:
-        print(self._users)
         return self._users.get(str(id))
 
     async def edit_user_application_role_connection(self, user: User, platform: RolePlatform) -> None:

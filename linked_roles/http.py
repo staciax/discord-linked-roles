@@ -115,7 +115,6 @@ class HTTPClient:
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         token: Optional[str] = None,
     ) -> None:
-        Route.BASE_REDIRECT = redirect_uri
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = validate_redirect_url(redirect_uri)
