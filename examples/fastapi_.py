@@ -1,6 +1,3 @@
-# Copyright (c) 2023-present staciax
-# Licensed under the MIT license. Refer to the LICENSE file in the project root for more information.
-
 import datetime
 import logging
 
@@ -20,13 +17,13 @@ from linked_roles import (
 
 _log = logging.getLogger(__name__)
 
-app = FastAPI(title='Linked Roles API', version='0.1.0')
+app = FastAPI(title='Linked Roles API', version='1.1.0')
 
 client = LinkedRolesOAuth2(
     client_id=_config.DISCORD_CLIENT_ID,
     client_secret=_config.DISCORD_CLIENT_SECRET,
     redirect_uri=_config.DISCORD_REDIRECT_URI,
-    # token=config.DISCORD_TOKEN,  # Optinal for Resgister
+    token=_config.DISCORD_TOKEN,
     scopes=(OAuth2Scopes.role_connection_write, OAuth2Scopes.identify),
     state=_config.COOKIE_SECRET,
 )
