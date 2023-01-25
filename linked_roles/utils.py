@@ -5,10 +5,13 @@
 from __future__ import annotations
 
 import json
-from typing import TYPE_CHECKING, Any, Dict, Union
+from typing import TYPE_CHECKING, Any, Dict, Tuple, Union
 
 if TYPE_CHECKING:
     from aiohttp import ClientResponse
+
+
+__all__: Tuple[str, ...] = ('json_or_text', 'MISSING')
 
 # source: https://github.com/Rapptz/discord.py/blob/master/discord/http.py
 async def json_or_text(response: ClientResponse) -> Union[Dict[str, Any], str]:
@@ -21,3 +24,23 @@ async def json_or_text(response: ClientResponse) -> Union[Dict[str, Any], str]:
         pass
 
     return text
+
+
+# source: https://github.com/Rapptz/discord.py/blob/master/discord/utils.py
+class _MissingSentinel:
+    __slots__ = ()
+
+    def __eq__(self, other) -> bool:
+        return False
+
+    def __bool__(self) -> bool:
+        return False
+
+    def __hash__(self) -> int:
+        return 0
+
+    def __repr__(self):
+        return '...'
+
+
+MISSING: Any = _MissingSentinel()

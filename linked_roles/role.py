@@ -13,9 +13,12 @@ if TYPE_CHECKING:
 
     from typing_extensions import Self
 
-    from .http import AppRoleConnectionMetadataRecord as RoleMetadataRecordPayload
+    from .http import (
+        AppRoleConnectionMetadataRecord as RoleMetadataRecordPayload,
+        UserRoleConnection as UserRoleConnectionPayload,
+    )
 
-    MetadataDataType = Union[int, bool, datetime]
+    MetadataDataType = Union[str, int, bool, datetime]
 
 __all__: Tuple[str, ...] = (
     'RolePlatform',
@@ -62,19 +65,19 @@ class RolePlatform:
     def get_metadata(self, key: str) -> Optional[RoleMetadata]:
         return self._metadata.get(key)
 
-    def add_metadata(self, key: str, value: MetadataDataType) -> None:
+    def add_metadata(self, key: str, value: MetadataDataType) -> Self:
         metadata = self.get_metadata(key)
         if metadata is not None:
             raise ValueError(f'{key!r} already exists')
         self._metadata[key] = RoleMetadata(key=key, value=value)
-        return metadata
+        return self
 
-    def edit_metadata(self, key: str, value: MetadataDataType) -> None:
+    def edit_metadata(self, key: str, value: MetadataDataType) -> Self:
         metadata = self.get_metadata(key)
         if metadata is None:
             raise ValueError(f'{key!r} does not exist')
         metadata.value = value
-        return metadata
+        return self
 
     def to_dict(self) -> Dict[str, Any]:
         payload = {
@@ -90,11 +93,11 @@ class RolePlatform:
                     meta_payload[key] = int(metadata.value)
                 else:
                     meta_payload[key] = metadata.value
-            payload['metadata'] = meta_payload
+            payload['metadata'] = meta_payload  # type: ignore
         return payload
 
     @classmethod
-    def from_dict(cls: Type[PlatformT], data: Dict[str, Any]) -> Self:
+    def from_dict(cls: Type[Self], data: UserRoleConnectionPayload) -> Self:
         platform = cls(
             name=data['platform_name'],
             username=data['platform_username'],
@@ -102,7 +105,7 @@ class RolePlatform:
         metadata = data.get('metadata')
         if metadata is not None:
             for key, value in metadata.items():
-                platform.set_metadata(key=key, value=value)
+                platform.add_metadata(key=key, value=value)
         return platform
 
 
@@ -158,14 +161,14 @@ class RoleMetadataRecord(Generic[PlatformT]):
         return isinstance(other, RoleMetadataRecord) and self.key == other.key
 
     def __ne__(self, other) -> bool:
-        return not self.__eq__(self, other)
+        return not self.__eq__(other)
 
     @property
     def parent(self) -> Optional[PlatformT]:
         return self._parent
 
     @property
-    def data_type(self) -> Type[Union[str, int, float, bool]]:
+    def data_type(self) -> Optional[Type[Union[int, datetime, bool]]]:
         return self._type.data_type
 
     def to_dict(self) -> Dict[str, Any]:

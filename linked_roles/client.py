@@ -12,6 +12,7 @@ from .http import HTTPClient
 from .oauth2 import OAuth2Token
 from .role import RoleMetadataRecord, RolePlatform
 from .user import User
+from .utils import MISSING
 
 __all__: Tuple[str, ...] = ('LinkedRolesOAuth2',)
 
@@ -29,14 +30,14 @@ if TYPE_CHECKING:
 class LinkedRolesOAuth2:
     def __init__(
         self,
-        client_id: int,
+        client_id: str,
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         token: Optional[str] = None,
         scopes=('role_connections.write', 'identify'),
         state: Optional[str] = None,
-        proxy=None,
-        proxy_auth: aiohttp.BasicAuth = None,
+        proxy: Optional[str] = None,
+        proxy_auth: aiohttp.BasicAuth = MISSING,
     ) -> None:
         self.application_id = client_id
         self._http = HTTPClient(
@@ -116,20 +117,22 @@ class LinkedRolesOAuth2:
     def get_role_metadata(self, key: str) -> Optional[RoleMetadataRecord]:
         return self._role_metadata.get(key)
 
-    async def fetch_user(self, tokens: OAuth2Token) -> User:
+    async def fetch_user(self, tokens: OAuth2Token) -> Optional[User]:
         data = await self._http.get_user(tokens.access_token)
         if data is None:
             return None
         user = User(self, data, tokens=tokens)
-        self._users[user.id] = user
+        self._users[str(user.id)] = user
         return user
 
     def get_user(self, id: Union[str, int]) -> Optional[User]:
         return self._users.get(str(id))
 
-    async def edit_user_application_role_connection(self, user: User, platform: RolePlatform) -> None:
+    async def edit_user_application_role_connection(self, user: User, platform: RolePlatform) -> Optional[RolePlatform]:
         try:
             tokens = user.get_tokens()
+            if tokens is None:
+                raise ValueError('User does not have tokens')
             after = await self._http.put_user_application_role_connection(tokens.access_token, platform.to_dict())
         except Exception as e:
             _log.error(f'Error while updating user application role connection: {e}')

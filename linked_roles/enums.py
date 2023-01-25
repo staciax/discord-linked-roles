@@ -4,11 +4,9 @@ from __future__ import annotations
 
 from datetime import datetime
 from enum import Enum
-from typing import Tuple, TypeVar
+from typing import Optional, Tuple, Type, TypeVar, Union
 
 __all__: Tuple[str, ...] = ('AppRoleConnectionMetadataRecordType', 'OAuth2Scopes')
-
-T = TypeVar('T')
 
 
 class AppRoleConnectionMetadataRecordType(int, Enum):
@@ -27,7 +25,7 @@ class AppRoleConnectionMetadataRecordType(int, Enum):
         return self.value
 
     @property
-    def data_type(self) -> T:
+    def data_type(self) -> Optional[Type[Union[int, datetime, bool]]]:
         if self.value <= 4:
             return int
         elif self.value <= 6:

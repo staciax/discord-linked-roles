@@ -20,9 +20,11 @@ if TYPE_CHECKING:
     T = TypeVar('T')
     Response = Coroutine[Any, Any, T]
 
+__all__: Tuple[str, ...] = ('HTTPClient',)
+
 _log = logging.getLogger(__name__)
 
-__all__: Tuple[str, ...] = ('HTTPClient',)
+MISSING = utils.MISSING
 
 
 class User(TypedDict):
@@ -49,6 +51,13 @@ class OAuth2TokenResponse(TypedDict):
     expires_in: int
 
 
+class RoleMetadata(TypedDict):
+    name: str
+    description: str
+    name_localizations: Optional[Dict[str, str]]
+    description_localizations: Optional[Dict[str, str]]
+
+
 class UserRoleConnection(TypedDict):
     platform_name: str
     platform_username: str
@@ -64,7 +73,7 @@ class AppRoleConnectionMetadataRecord(TypedDict):
     description_localizations: Optional[Dict[str, str]]
 
 
-def validate_redirect_url(url: Optional[str]) -> str:
+def validate_redirect_url(url: Optional[str]) -> Optional[str]:
     if url is not None:
         if url.startswith('localhost'):
             return 'http://' + url
@@ -72,6 +81,7 @@ def validate_redirect_url(url: Optional[str]) -> str:
         if not match:
             raise ValueError(f'{url!r} must be a valid http or https url')
         return url
+    return None
 
 
 # HTTPClient, Route inspired by discord.py
@@ -107,8 +117,8 @@ class HTTPClient:
     def __init__(
         self,
         client_id: str,
-        client_secret: str,
-        redirect_uri: str,
+        client_secret: Optional[str],
+        redirect_uri: Optional[str],
         scopes: Tuple[str, ...],
         state: Optional[str] = None,
         proxy: Optional[str] = None,
@@ -123,7 +133,7 @@ class HTTPClient:
         self.proxy = proxy
         self.proxy_auth = proxy_auth
         self.token = token
-        self._session: Optional[aiohttp.ClientSession] = None
+        self._session: aiohttp.ClientSession = MISSING
 
     async def request(self, route: Route, **kwargs: Any) -> Any:
         method = route.method
@@ -175,7 +185,7 @@ class HTTPClient:
         raise RuntimeError('Unreachable code in HTTP handling')
 
     async def close(self) -> None:
-        if self._session is not None:
+        if self._session is not MISSING:
             await self._session.close()
 
     async def start(self) -> None:
@@ -183,9 +193,9 @@ class HTTPClient:
 
     def clear(self) -> None:
         if self._session and self._session.closed:
-            self._session = None
+            self._session = MISSING
 
-    def get_oauth_url(self) -> Route:
+    def get_oauth_url(self) -> str:
         state = self.state or uuid.uuid4().hex
         url = 'https://discord.com/api/oauth2/authorize'
         params = {
@@ -231,7 +241,9 @@ class HTTPClient:
         }
         return self.request(r, headers=headers)
 
-    def put_application_role_connection_metadata(self, payload: str) -> Response[List[AppRoleConnectionMetadataRecord]]:
+    def put_application_role_connection_metadata(
+        self, payload: List[RoleMetadata]
+    ) -> Response[List[AppRoleConnectionMetadataRecord]]:
         r = Route('PUT', '/applications/{application_id}/role-connections/metadata', application_id=self.client_id)
         headers = {
             'Content-Type': 'application/json',
