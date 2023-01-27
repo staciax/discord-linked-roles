@@ -238,7 +238,7 @@ class LinkedRolesOAuth2:
         """
         return self._users.get(str(id))
 
-    async def edit_user_application_role_connection(self, user: User, platform: RolePlatform) -> Optional[RolePlatform]:
+    async def edit_user_role_connection(self, user: User, platform: RolePlatform) -> Optional[RolePlatform]:
         """
         Edits the user application role connection.
         Parameters

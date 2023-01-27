@@ -111,7 +111,7 @@ class User(BaseUser):
         Optional[:class:`RolePlatform`]
             The role platform of the user.
         """
-        return self._role_platform
+        return self._role_platform or self.__orginal_role_platform__
 
     def get_tokens(self) -> Optional[OAuth2Token]:
         """ " Returns the tokens of the user.
@@ -131,20 +131,6 @@ class User(BaseUser):
         """
         self._tokens = value
 
-    @property
-    def role_platform(self) -> Optional[RolePlatform]:
-        """Returns the role platform of the user.
-        Returns
-        -------
-        Optional[:class:`RolePlatform`]
-            The role platform of the user.
-        """
-        return self._role_platform
-
-    @role_platform.setter
-    def role_platform(self, value: RolePlatform) -> None:
-        self.__orginal_role_platform__ = self._role_platform = value
-
     async def edit_role_metadata(self, platform: Optional[RolePlatform] = None) -> Optional[RolePlatform]:
         """Edits the role metadata of the user.
         Parameters
@@ -162,12 +148,14 @@ class User(BaseUser):
         TypeError
             The role metadata value must be the same type.
         """
-        if platform is None and self._role_platform is None:
-            platform = RolePlatform(name='Linked Roles', username=self.username)
 
-        platform = platform or self._role_platform
+        platform = platform or self.get_role_platform()
 
         if platform is not None:
+
+            if self.__orginal_role_platform__ is None:
+                self.__orginal_role_platform__ = platform
+
             if self.client.is_role_metadata_fetched():
                 for metadata in platform.get_all_metadata():
 
@@ -180,7 +168,8 @@ class User(BaseUser):
                     if get_metadata.data_type is not None:
                         if not isinstance(metadata.value, get_metadata.data_type):
                             raise TypeError(f'Role metadata {metadata.key!r} value must be {get_metadata.data_type!r}')
-            platform = await self.client.edit_user_application_role_connection(self, platform)
+
+            platform = await self.client.edit_user_role_connection(self, platform)
             if platform is not None:
                 self._role_platform = platform
-        return self._role_platform
+        return self.get_role_platform()
