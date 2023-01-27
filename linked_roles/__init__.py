@@ -10,7 +10,7 @@ __title__ = 'linked_roles'
 __author__ = 'staciax'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2023-present staciax'
-__version__ = '1.2.0-pre'
+__version__ = '1.2.0'
 
 from . import utils as utils
 from .client import *
