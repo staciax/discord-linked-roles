@@ -12,9 +12,9 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright 2023-present staciax'
 __version__ = '1.2.0-pre'
 
+from . import utils as utils
 from .client import *
 from .enums import *
 from .errors import *
 from .role import *
 from .user import *
-from . import utils as utils

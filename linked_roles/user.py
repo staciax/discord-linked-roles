@@ -120,6 +120,9 @@ class User(BaseUser):
         Optional[:class:`OAuth2Token`]
             The tokens of the user.
         """
+        if self._tokens is not None:
+            if self._tokens.is_expired():
+                self.client.loop.create_task(self._tokens.refresh())
         return self._tokens
 
     def set_tokens(self, value: OAuth2Token) -> None:
@@ -149,12 +152,12 @@ class User(BaseUser):
             The role metadata value must be the same type.
         """
 
+        if self.__orginal_role_platform__ is None and self._role_platform is not None:
+            self.__orginal_role_platform__ = self._role_platform
+
         platform = platform or self.get_role_platform()
 
         if platform is not None:
-
-            if self.__orginal_role_platform__ is None:
-                self.__orginal_role_platform__ = platform
 
             if self.client.is_role_metadata_fetched():
                 for metadata in platform.get_all_metadata():

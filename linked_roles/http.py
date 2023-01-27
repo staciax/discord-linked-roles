@@ -121,6 +121,7 @@ class HTTPClient:
 
     def __init__(
         self,
+        loop: asyncio.AbstractEventLoop,
         client_id: str,
         client_secret: Optional[str],
         redirect_uri: Optional[str],
@@ -130,6 +131,7 @@ class HTTPClient:
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         token: Optional[str] = None,
     ) -> None:
+        self.loop: asyncio.AbstractEventLoop = loop
         self.client_id = client_id
         self.client_secret = client_secret
         self.redirect_uri = validate_redirect_url(redirect_uri)

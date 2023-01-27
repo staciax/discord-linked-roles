@@ -3,8 +3,9 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
-from typing import TYPE_CHECKING, Dict, List, Optional, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
@@ -25,6 +26,23 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     RoleMetadataRecordType = Union[int, bool, datetime]
+
+# -- from discord.py
+# link: https://github.com/Rapptz/discord.py/blob/9ea6ee8887b65f21ccc0bcf013786f4ea61ba608/discord/client.py#L111
+class _LoopSentinel:
+    __slots__ = ()
+
+    def __getattr__(self, attr: str) -> None:
+        msg = (
+            'loop attribute cannot be accessed in non-async contexts. '
+            'Consider using either an asynchronous main function and passing it to asyncio.run or '
+        )
+        raise AttributeError(msg)
+
+
+_loop: Any = _LoopSentinel()
+
+# --
 
 
 class LinkedRolesOAuth2:
@@ -63,7 +81,9 @@ class LinkedRolesOAuth2:
         proxy_auth: aiohttp.BasicAuth = MISSING,
     ) -> None:
         self.application_id = client_id
+        self.loop: asyncio.AbstractEventLoop = _loop
         self._http = HTTPClient(
+            loop=self.loop,
             client_id=client_id,
             client_secret=client_secret,
             redirect_uri=redirect_uri,
@@ -95,6 +115,9 @@ class LinkedRolesOAuth2:
         """
         Starts the client.
         """
+        loop = asyncio.get_running_loop()
+        self.loop = loop
+        self._http.loop = loop
         await self._http.start()
         if self._http.token is not None:
             role_connections_records = await self._http.get_application_role_connection_metadata_records()
