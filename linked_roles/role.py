@@ -10,13 +10,9 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional, T
 from .enums import AppRoleConnectionMetadataRecordType as RoleMetadataType
 
 if TYPE_CHECKING:
-
     from typing_extensions import Self
 
-    from .http import (
-        AppRoleConnectionMetadataRecord as RoleMetadataRecordPayload,
-        UserRoleConnection as UserRoleConnectionPayload,
-    )
+    from .http import AppRoleConnectionMetadataRecord as RoleMetadataRecordPayload
 
     MetadataDataType = Union[str, int, bool, datetime]
 
@@ -61,7 +57,7 @@ class RolePlatform:
         The username of the platform.
     """
 
-    def __init__(self, *, name: Optional[str], username: Optional[str]):
+    def __init__(self, *, name: Optional[str] = None, username: Optional[str] = None):
         if name is None:
             name = ''
         if len(name) > 50:
@@ -115,8 +111,10 @@ class RolePlatform:
         Raises
         ------
         ValueError
-            The key is already in use.
+            You can only have 5 metadata values per platform or the key does not exist.
         """
+        if len(self._metadata) >= 5:
+            raise ValueError('You can only have 5 metadata values per platform')
         metadata = self.get_metadata(key)
         if metadata is not None:
             raise ValueError(f'{key!r} already exists')
@@ -142,10 +140,76 @@ class RolePlatform:
             The key does not exist.
         """
         metadata = self.get_metadata(key)
-        if metadata is None:
-            raise ValueError(f'{key!r} does not exist')
-        metadata.value = value
+        if metadata is not None:
+            metadata.value = value
         return self
+
+    def add_or_edit_metadata(self, key: str, value: MetadataDataType) -> Self:
+        """
+        Add or edit a metadata value for this platform.
+        Parameters
+        ----------
+        key : :class:`str`
+            The key of the metadata.
+        value : Union[:class:`str`, :class:`int`, :class:`bool`, :class:`datetime.datetime`]
+            The value of the metadata.
+        Returns
+        -------
+        :class:`RolePlatform`
+            The platform.
+        """
+        metadata = self.get_metadata(key)
+        if metadata is None:
+            self.add_metadata(key, value)
+        else:
+            self.edit_metadata(key, value)
+        return self
+
+    def remove_metadata(self, key: str) -> Self:
+        """
+        Remove a metadata value from this platform.
+        Parameters
+        ----------
+        key : :class:`str`
+            The key of the metadata.
+        Returns
+        -------
+        :class:`RolePlatform`
+            The platform.
+        Raises
+        ------
+        ValueError
+            The key does not exist.
+        """
+        try:
+            del self._metadata[key]
+        except KeyError:
+            pass
+        return self
+
+    def clear_metadata(self) -> Self:
+        """Clear all metadata from this platform.
+        Returns
+        -------
+        :class:`RolePlatform`
+            The platform.
+        """
+
+        try:
+            self._metadata.clear()
+        except AttributeError:
+            self._metadata = {}
+
+        return self
+
+    def copy(self) -> Self:
+        """Copy the platform.
+        Returns
+        -------
+        :class:`RolePlatform`
+            The copied platform.
+        """
+        return self.__class__.from_dict(self.to_dict())
 
     def to_dict(self) -> Mapping[str, Any]:
         """Convert the platform to a dictionary.
@@ -172,27 +236,28 @@ class RolePlatform:
         return payload
 
     @classmethod
-    def from_dict(cls: Type[Self], data: UserRoleConnectionPayload) -> Self:
+    def from_dict(cls: Type[Self], data: Mapping[str, Any]) -> Self:
         """
         Create a platform from a dictionary.
         Parameters
         ----------
-        data: UserRoleConnectionPayload
+        data: Mapping[:class:`str`, Any]
             The dictionary to create the platform from.
         Returns
         -------
         :class:`RolePlatform`
             The platform.
         """
-        platform = cls(
-            name=data['platform_name'],
-            username=data['platform_username'],
-        )
+        self = cls.__new__(cls)
+        self.name = data.get('platform_name', '')
+        self.username = data.get('platform_username', '')
+        self._metadata = {}
         metadata = data.get('metadata')
         if metadata is not None:
             for key, value in metadata.items():
-                platform.add_metadata(key=key, value=value)
-        return platform
+                # TODO: check value type
+                self.add_metadata(key=key, value=value)
+        return self
 
 
 class RoleMetadata:
