@@ -10,10 +10,11 @@ __title__ = 'linked_roles'
 __author__ = 'staciax'
 __license__ = 'MIT'
 __copyright__ = 'Copyright 2023-present staciax'
-__version__ = '1.1.1'
+__version__ = '1.2.0-pre'
 
 from .client import *
 from .enums import *
 from .errors import *
 from .role import *
 from .user import *
+from . import utils as utils
