@@ -11,7 +11,7 @@ import aiohttp
 
 from .http import HTTPClient
 from .oauth2 import OAuth2Token
-from .role import RoleMetadataRecord, RolePlatform
+from .role import RoleConnection, RoleMetadataRecord
 from .user import User
 from .utils import MISSING
 
@@ -261,40 +261,55 @@ class LinkedRolesOAuth2:
         """
         return self._users.get(str(id))
 
-    async def edit_user_role_connection(self, user: User, platform: RolePlatform) -> Optional[RolePlatform]:
+    def remove_user(self, user: Union[str, int, User]) -> None:
+        """
+        Removes the user.
+        Parameters
+        ----------
+        user : Union[:class:`str`, :class:`int`, :class:`User`]
+            The user.
+        """
+        if isinstance(user, User):
+            user = user.id
+        try:
+            del self._users[str(user)]
+        except KeyError:
+            pass
+
+    async def edit_user_role_connection(self, user: User, role_connection: RoleConnection) -> Optional[RoleConnection]:
         """
         Edits the user application role connection.
         Parameters
         ----------
         user : :class:`User`
             The user.
-        platform : :class:`RolePlatform`
-            The role platform.
+        role : :class:`RoleConnection`
+            User's role connection.
         Returns
         -------
-        Optional[:class:`RolePlatform`]
-            The role platform.
+        Optional[:class:`RoleConnection`]
+            The role connection.
         """
         tokens = user.get_tokens()
         if tokens is None:
             raise ValueError('User does not have tokens')
-        after = await self._http.put_user_application_role_connection(tokens.access_token, platform.to_dict())
+        after = await self._http.put_user_application_role_connection(tokens.access_token, role_connection.to_dict())
         if after is not None:
-            platform = RolePlatform.from_dict(after)
+            role_connection = RoleConnection.from_dict(after)
             try:
                 await self.on_user_application_role_connection_update(
-                    user=user, before=user.__orginal_role_platform__ or platform, after=platform
+                    user=user, before=user.__before_role_connectiion_update__ or role_connection, after=role_connection
                 )
             except Exception as e:
                 _log.error(f'event on_user_application_role_connection_update raised an exception: {e}')
-            user.__orginal_role_platform__ = platform
-        return platform
+            user.__before_role_connectiion_update__ = role_connection
+        return role_connection
 
     async def on_user_application_role_connection_update(
         self,
         user: User,
-        before: RolePlatform,
-        after: RolePlatform,
+        before: RoleConnection,
+        after: RoleConnection,
     ) -> None:
         """
         Called when a user's application role connection is updated.
@@ -302,9 +317,9 @@ class LinkedRolesOAuth2:
         ----------
         user : :class:`User`
             The user.
-        before : :class:`RolePlatform`
-            The role platform before the update.
-        after : :class:`RolePlatform`
-            The role platform after the update.
+        before : :class:`RoleConnection`
+            The role connection before the update.
+        after : :class:`RoleConnection`
+            The role connection after the update.
         """
         pass

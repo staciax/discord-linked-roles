@@ -17,7 +17,14 @@ __all__: Tuple[str, ...] = (
     'UserNotFound',
     'PlatformNotFound',
     'OAuth2Unauthorized',
+    'RoleLinkedNotFound',
 )
+
+
+class RoleLinkedException(Exception):
+    """Base exception class for all linked_roles related errors."""
+
+    pass
 
 
 class HTTPException(Exception):
@@ -56,7 +63,7 @@ class RateLimited(HTTPException):
         super().__init__(response, message)
 
 
-class UserNotFound(Exception):
+class UserNotFound(RoleLinkedException):
     """Exception that's thrown when the user is not found in the database."""
 
     def __init__(self, message: str) -> None:
@@ -64,7 +71,7 @@ class UserNotFound(Exception):
         self.message = message
 
 
-class PlatformNotFound(Exception):
+class PlatformNotFound(RoleLinkedException):
     """Exception that's thrown when the platform is not found in the database."""
 
     def __init__(self, message: str) -> None:
@@ -72,8 +79,16 @@ class PlatformNotFound(Exception):
         self.message = message
 
 
-class OAuth2Unauthorized(Exception):
+class OAuth2Unauthorized(RoleLinkedException):
     """Exception that's thrown when the OAuth2 token is invalid."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
+        self.message = message
+
+
+class RoleLinkedNotFound(RoleLinkedException):
+    """Exception that's thrown when the role is not found in the database."""
 
     def __init__(self, message: str) -> None:
         super().__init__(message)

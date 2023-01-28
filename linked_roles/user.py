@@ -5,11 +5,13 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Union
 
+from .errors import RoleLinkedNotFound
+from .role import RoleConnection
+
 if TYPE_CHECKING:
     from .client import LinkedRolesOAuth2
     from .http import User as UserPayload
     from .oauth2 import OAuth2Token
-    from .role import RolePlatform
 
     Snowflake = Union[str, int]
 
@@ -95,23 +97,69 @@ class User(BaseUser):
     def __init__(self, client: LinkedRolesOAuth2, data: UserPayload, *, tokens: Optional[OAuth2Token] = None):
         super().__init__(data)
         self.client = client
-        self._role_platform: Optional[RolePlatform] = None
         self._tokens: Optional[OAuth2Token] = tokens
-        self.__orginal_role_platform__: Optional[RolePlatform] = None
+        self._role_connection: Optional[RoleConnection] = None
+        self.__before_role_connectiion_update__: Optional[RoleConnection] = None
 
     def _update(self, data: UserPayload, tokens: Optional[OAuth2Token] = None) -> None:
         super()._update(data)
         if tokens is not None:
             self._tokens = tokens
 
-    def get_role_platform(self) -> Optional[RolePlatform]:
-        """ " Returns the role platform of the user.
+    def get_role_connection(self) -> Optional[RoleConnection]:
+        """ " Returns the role connection of the user.
         Returns
         -------
-        Optional[:class:`RolePlatform`]
-            The role platform of the user.
+        Optional[:class:`RoleConnection`]
+            The role connection of the user.
         """
-        return self._role_platform or self.__orginal_role_platform__
+        return self._role_connection
+
+    async def fetch_role_connection(self) -> Optional[RoleConnection]:
+        """ " Fetches the role connection of the user.
+        Returns
+        -------
+        Optional[:class:`RoleConnection`]
+            The role connection of the user.
+        Raises
+        ------
+        :class:`RoleLinkedNotFound`
+            The user is not linked role or user not oauth2.
+        """
+        tokens = self.get_tokens()
+        if tokens is not None:
+            data = await self.client._http.get_user_application_role_connection(tokens.access_token)
+            if data is None:
+                raise RoleLinkedNotFound("The user is not linked role or user not oauth2.")
+            self._role_connection = RoleConnection.from_dict(data)
+        return self._role_connection
+
+    async def get_or_fetch_role_connection(self) -> Optional[RoleConnection]:
+        """ " Gets or fetches the role connection of the user.
+        Returns
+        -------
+        Optional[:class:`RoleConnection`]
+            The role connection of the user.
+        """
+        if self._role_connection is None:
+            try:
+                await self.fetch_role_connection()
+            except RoleLinkedNotFound:
+                return None
+        return self._role_connection
+
+    async def refresh_role_connection(self) -> Optional[RoleConnection]:
+        """ " Refreshes the role connection of the user.
+        Returns
+        -------
+        Optional[:class:`RoleConnection`]
+            The role connection of the user.
+        """
+        tokens = self.get_tokens()
+        if tokens is not None:
+            data = await self.client._http.get_user_application_role_connection(tokens.access_token)
+            self._role_connection = RoleConnection.from_dict(data)
+        return self._role_connection
 
     def get_tokens(self) -> Optional[OAuth2Token]:
         """ " Returns the tokens of the user.
@@ -134,16 +182,16 @@ class User(BaseUser):
         """
         self._tokens = value
 
-    async def edit_role_metadata(self, platform: Optional[RolePlatform] = None) -> Optional[RolePlatform]:
+    async def edit_role_connection(self, role: RoleConnection) -> Optional[RoleConnection]:
         """Edits the role metadata of the user.
         Parameters
         ----------
-        platform : Optional[:class:`RolePlatform`]
-            The role platform of the user.
+        role : :class:`RoleConnection`
+            The role connection of the user.
         Returns
         -------
-        Optional[:class:`RolePlatform`]
-            The role platform of the user.
+        Optional[:class:`RoleConnection`]
+            The role connection of the user.
         Raises
         ------
         ValueError
@@ -152,27 +200,24 @@ class User(BaseUser):
             The role metadata value must be the same type.
         """
 
-        if self.__orginal_role_platform__ is None and self._role_platform is not None:
-            self.__orginal_role_platform__ = self._role_platform
+        if self.__before_role_connectiion_update__ is None and self._role_connection is not None:
+            self.__before_role_connectiion_update__ = self._role_connection.copy()
 
-        platform = platform or self.get_role_platform()
+        if self.client.is_role_metadata_fetched():
+            for metadata in role.get_all_metadata():
 
-        if platform is not None:
+                # verify metadata
+                get_metadata = self.client.get_role_metadata(metadata.key)
 
-            if self.client.is_role_metadata_fetched():
-                for metadata in platform.get_all_metadata():
+                if get_metadata is None:
+                    raise ValueError(f'Role metadata {metadata.key!r} is not found')
 
-                    # verify metadata
-                    get_metadata = self.client.get_role_metadata(metadata.key)
+                if get_metadata.data_type is not None:
+                    if not isinstance(metadata.value, get_metadata.data_type):
+                        raise TypeError(f'Role metadata {metadata.key!r} value must be {get_metadata.data_type!r}')
 
-                    if get_metadata is None:
-                        raise ValueError(f'Role metadata {metadata.key!r} is not found')
-
-                    if get_metadata.data_type is not None:
-                        if not isinstance(metadata.value, get_metadata.data_type):
-                            raise TypeError(f'Role metadata {metadata.key!r} value must be {get_metadata.data_type!r}')
-
-            platform = await self.client.edit_user_role_connection(self, platform)
-            if platform is not None:
-                self._role_platform = platform
-        return self.get_role_platform()
+        new_role = await self.client.edit_user_role_connection(self, role)
+        if new_role is not None:
+            if self._role_connection is not None:
+                self._role_connection = new_role
+        return self.get_role_connection()

@@ -7,7 +7,7 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
 import _config
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, OAuth2Unauthorized, RolePlatform, User, UserNotFound
+from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, OAuth2Unauthorized, RoleConnection, User, UserNotFound
 
 _log = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class LinkedRolesClient(LinkedRolesOAuth2):
         )
 
     async def on_user_application_role_connection_update(
-        self, user: User, before: RolePlatform, after: RolePlatform
+        self, user: User, before: RoleConnection, after: RoleConnection
     ) -> None:
         _log.info(f'User {user} updated their role connection from {before} to {after}')
 
@@ -60,7 +60,7 @@ async def shutdown():
     _log.info('Shutdown complete')
 
 
-@app.get('/linked-role', status_code=status.HTTP_302_FOUND)
+@app.get('/v1/linked-role', status_code=status.HTTP_302_FOUND)
 async def linked_roles():
     url = client.get_oauth_url()
     return RedirectResponse(url=url)
@@ -78,21 +78,21 @@ async def verified_role(code: str):
     if user is None:
         raise UserNotFound('User not found')
 
-    # set role platform
-    platform = RolePlatform(name='VALORANT', username=str(user))
+    # set role connection
+    role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
     # add metadata
-    platform.add_metadata(key='matches', value=10)
-    platform.add_metadata(key='winrate', value=20)
-    platform.add_metadata(key='combat_score', value=30)
+    role.add_metadata(key='matches', value=10)
+    role.add_metadata(key='winrate', value=20)
+    role.add_metadata(key='combat_score', value=30)
 
     # set role metadata
-    await user.edit_role_metadata(platform=platform)
+    await user.edit_role_connection(role)
 
     return '<h1>Role metadata set successfully. Please check your Discord profile.</h1>'
 
 
-@app.post('/update-role-metadata')
+@app.put('/v1/update-role-metadata')
 async def update_role_metadata(player: Player):
 
     # get user to make sure they are still connected
@@ -106,30 +106,30 @@ async def update_role_metadata(player: Player):
     if tokens is None:
         raise OAuth2Unauthorized(f'User ID {player.owner_id} is not authenticated')
 
-    # get user role platform
-    before = user.get_role_platform()
+    # get user role connection
+    before = await user.get_or_fetch_role_connection()
 
     if before is None:
         raise UserNotFound(f'User with ID {player.owner_id} has no role connection')
 
-    # copy role platform because we don't want to edit the original
-    platform = before.copy()
+    # copy role connection to make changes
+    role = before.copy()
 
-    platform.username = player.display_name
+    role.platform_username = player.display_name
     if player.competitive_rank is not None:
-        platform.username += f' ({player.competitive_rank})'
+        role.platform_username += f' ({player.competitive_rank})'
 
     # edit metadata
-    platform.edit_metadata(key='matches', value=player.matches)
-    platform.edit_metadata(key='winrate', value=int(player.winrate))
-    platform.edit_metadata(key='combat_score', value=int(player.combat_score))
+    role.edit_metadata(key='matches', value=player.matches)
+    role.edit_metadata(key='winrate', value=int(player.winrate))
+    role.edit_metadata(key='combat_score', value=int(player.combat_score))
 
     # new metadata
-    platform.add_or_edit_metadata(key='last_update', value=datetime.datetime.now())
-    platform.add_or_edit_metadata(key='verified', value=True)
+    role.add_or_edit_metadata(key='last_update', value=datetime.datetime.now())
+    role.add_or_edit_metadata(key='verified', value=True)
 
-    # update role metadata
-    await user.edit_role_metadata(platform=platform)
+    # update role connection
+    await user.edit_role_connection(role)
 
     return JSONResponse(
         status_code=status.HTTP_200_OK,
@@ -137,7 +137,7 @@ async def update_role_metadata(player: Player):
             'status': 200,
             'message': 'Updated role metadata successfully',
             'user': player.owner_id,
-            'platform': {'before': before.to_dict(), 'after': platform.to_dict()},
+            'connection': {'before': before.to_dict(), 'after': role.to_dict()},
         },
     )
 

@@ -258,6 +258,14 @@ class HTTPClient:
         }
         return self.request(r, json=payload, headers=headers)
 
+    def get_user_application_role_connection(self, access_token: str) -> Response[UserRoleConnection]:
+        r = Route('GET', '/users/@me/applications/{application_id}/role-connection', application_id=self.client_id)
+        headers = {
+            'Content-Type': 'application/json',
+            'Authorization': f'Bearer {access_token}',
+        }
+        return self.request(r, headers=headers)
+
     def put_user_application_role_connection(
         self, access_token: str, payload: Mapping[str, Any]
     ) -> Response[UserRoleConnection]:

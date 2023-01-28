@@ -25,7 +25,7 @@ from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
 import config
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RolePlatform, UserNotFound
+from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RoleConnection, UserNotFound
 
 app = FastAPI(title='Linked Roles OAuth2')
 
@@ -63,16 +63,16 @@ async def verified_role(code: str):
     if user is None:
         raise UserNotFound('User not found')
 
-    # set role platform
-    platform = RolePlatform(name='VALORANT', username=str(user))
+    # set role connection
+    role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
     # add metadata
-    platform.add_metadata(key='matches', value=10)
-    platform.add_metadata(key='winrate', value=20)
-    platform.add_metadata(key='combat_score', value=30)
+    role.add_metadata(key='matches', value=10)
+    role.add_metadata(key='winrate', value=20)
+    role.add_metadata(key='combat_score', value=30)
 
     # set role metadata
-    await user.edit_role_metadata(platform=platform)
+    await user.edit_role_connection(role)
 
     return 'Role metadata set successfully. Please check your Discord profile.'
 ```
@@ -135,10 +135,10 @@ import uuid
 - fastapi more examples: [examples/fastapi](examples/fastapi_.py)
 
 ## TODO:
-- [ ] Add more examples
-- [ ] Add documentation
-- [ ] Add database support (postgresql, sqlite, etc.) ?
-- [ ] add more class error
+- [ ] more examples
+- [ ] documentation
+- [ ] database support (postgresql, sqlite, etc.) ?
+- [ ] localizations support
 
 <!-- code style, inspiration is discord.py -->
 ## Code Style Inspiration

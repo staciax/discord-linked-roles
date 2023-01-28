@@ -17,12 +17,12 @@ if TYPE_CHECKING:
     MetadataDataType = Union[str, int, bool, datetime]
 
 __all__: Tuple[str, ...] = (
-    'RolePlatform',
+    'RoleConnection',
     'RoleMetadata',
     'RoleMetadataRecord',
 )
 
-PlatformT = TypeVar('PlatformT', bound='RolePlatform')
+RoleConnectionT = TypeVar('RoleConnectionT', bound='RoleConnection')
 
 VALID_ROLE_METADATA_KEY = r'^[A-Za-z0-9_]{0,50}$'
 
@@ -39,42 +39,42 @@ def validate_metadata_key(key: str) -> str:
     return key
 
 
-class RolePlatform:
+class RoleConnection:
     """
-    Represents a platform that a role is connected to.
+    Represents a role connection.
 
     Parameters
     ----------
-    name : Optional[:class:`str`]
+    platform_name : Optional[:class:`str`]
         The name of the platform.
-    username : Optional[:class:`str`]
+    platform_username : Optional[:class:`str`]
         The username of the platform.
     Attributes
     ----------
-    name : :class:`str`
+    platform_name : :class:`str`
         The name of the platform.
-    username : :class:`str`
+    platform_username : :class:`str`
         The username of the platform.
     """
 
-    def __init__(self, *, name: Optional[str] = None, username: Optional[str] = None):
-        if name is None:
-            name = ''
-        if len(name) > 50:
-            raise ValueError('Platform name must be less than 50 characters')
-        self.name: str = name
-        if username is None:
-            username = ''
-        if len(username) > 100:
-            raise ValueError('Platform username must be less than 100 characters')
-        self.username: str = username
+    def __init__(self, *, platform_name: Optional[str] = None, platform_username: Optional[str] = None):
+        if platform_name is None:
+            platform_name = ''
+        if len(platform_name) > 50:
+            raise ValueError('platform name must be less than 50 characters')
+        self.platform_name: str = platform_name
+        if platform_username is None:
+            platform_username = ''
+        if len(platform_username) > 100:
+            raise ValueError('platform username must be less than 100 characters')
+        self.platform_username: str = platform_username
         self._metadata: Dict[str, RoleMetadata] = {}
 
     def __repr__(self) -> str:
-        return f'<RolePlatform name={self.name!r} username={self.username!r}>'
+        return f'<RoleConnection platform_name={self.platform_name!r} platform_username={self.platform_username!r}>'
 
     def get_all_metadata(self) -> List[RoleMetadata]:
-        """Get all metadata for this platform.
+        """Get all metadata for this role connection.
         Returns
         -------
         List[:class:`RoleMetadata`]
@@ -83,7 +83,7 @@ class RolePlatform:
         return list(self._metadata.values())
 
     def get_metadata(self, key: str) -> Optional[RoleMetadata]:
-        """Get a metadata value for this platform.
+        """Get a metadata value for this role connection.
         Parameters
         ----------
         key : :class:`str`
@@ -97,7 +97,7 @@ class RolePlatform:
 
     def add_metadata(self, key: str, value: MetadataDataType) -> Self:
         """
-        Add a metadata value to this platform.
+        Add a metadata value to this role connection.
         Parameters
         ----------
         key : :class:`str`
@@ -106,12 +106,12 @@ class RolePlatform:
             The value of the metadata.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         Raises
         ------
         ValueError
-            You can only have 5 metadata values per platform or the key does not exist.
+            You can only have 5 metadata values per platform role connection or the key already exists.
         """
         if len(self._metadata) >= 5:
             raise ValueError('You can only have 5 metadata values per platform')
@@ -123,7 +123,7 @@ class RolePlatform:
 
     def edit_metadata(self, key: str, value: MetadataDataType) -> Self:
         """
-        Edit a metadata value for this platform.
+        Edit a metadata value for this role connection.
         Parameters
         ----------
         key : :class:`str`
@@ -132,8 +132,8 @@ class RolePlatform:
             The value of the metadata.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         Raises
         ------
         ValueError
@@ -146,7 +146,7 @@ class RolePlatform:
 
     def add_or_edit_metadata(self, key: str, value: MetadataDataType) -> Self:
         """
-        Add or edit a metadata value for this platform.
+        Add or edit a metadata value for this role connection.
         Parameters
         ----------
         key : :class:`str`
@@ -155,8 +155,8 @@ class RolePlatform:
             The value of the metadata.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         """
         metadata = self.get_metadata(key)
         if metadata is None:
@@ -167,15 +167,15 @@ class RolePlatform:
 
     def remove_metadata(self, key: str) -> Self:
         """
-        Remove a metadata value from this platform.
+        Remove a metadata value from this role connection.
         Parameters
         ----------
         key : :class:`str`
             The key of the metadata.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         Raises
         ------
         ValueError
@@ -188,11 +188,11 @@ class RolePlatform:
         return self
 
     def clear_metadata(self) -> Self:
-        """Clear all metadata from this platform.
+        """Clear all metadata from this role connection.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         """
 
         try:
@@ -203,24 +203,24 @@ class RolePlatform:
         return self
 
     def copy(self) -> Self:
-        """Copy the platform.
+        """Copy the role connection.
         Returns
         -------
-        :class:`RolePlatform`
-            The copied platform.
+        :class:`RoleConnection`
+            The copied role connection.
         """
         return self.__class__.from_dict(self.to_dict())
 
     def to_dict(self) -> Mapping[str, Any]:
-        """Convert the platform to a dictionary.
+        """Convert the role connection to a dictionary.
         Returns
         -------
         Dict[:class:`str`, Any]
-            The platform as a dictionary.
+            The role connection as a dictionary.
         """
         payload = {
-            'platform_name': self.name,
-            'platform_username': self.username,
+            'platform_name': self.platform_name,
+            'platform_username': self.platform_username,
             'metadata': {},
         }
         if self._metadata:
@@ -238,19 +238,19 @@ class RolePlatform:
     @classmethod
     def from_dict(cls: Type[Self], data: Mapping[str, Any]) -> Self:
         """
-        Create a platform from a dictionary.
+        Create a role connection from a dictionary.
         Parameters
         ----------
         data: Mapping[:class:`str`, Any]
-            The dictionary to create the platform from.
+            The dictionary to create the role connection from.
         Returns
         -------
-        :class:`RolePlatform`
-            The platform.
+        :class:`RoleConnection`
+            The role connection.
         """
         self = cls.__new__(cls)
-        self.name = data.get('platform_name', '')
-        self.username = data.get('platform_username', '')
+        self.platform_name = data.get('platform_name', '')
+        self.platform_username = data.get('platform_username', '')
         self._metadata = {}
         metadata = data.get('metadata')
         if metadata is not None:
@@ -291,7 +291,7 @@ class RoleMetadata:
         }
 
 
-class RoleMetadataRecord(Generic[PlatformT]):
+class RoleMetadataRecord(Generic[RoleConnectionT]):
     """
     Represents a metadata record for a role.
     Parameters
@@ -337,7 +337,7 @@ class RoleMetadataRecord(Generic[PlatformT]):
         self._type: RoleMetadataType = type
         self.name_localizations = name_localizations
         self.description_localizations: Optional[Dict[str, Any]] = description_localizations
-        self._parent: Optional[PlatformT] = None  # or self._platform?
+        self._parent: Optional[RoleConnectionT] = None  # or self._platform?
 
     def __repr__(self) -> str:
         return f'<RoleMetadata key={self.key!r} name={self.name!r} type={self._type!r}>'
@@ -349,8 +349,8 @@ class RoleMetadataRecord(Generic[PlatformT]):
         return not self.__eq__(other)
 
     @property
-    def parent(self) -> Optional[PlatformT]:
-        """Optional[:class:`RolePlatform`]: The parent platform of the metadata record."""
+    def parent(self) -> Optional[RoleConnectionT]:
+        """Optional[:class:`RoleConnection`]: The parent role connection of the metadata record."""
         return self._parent
 
     @property
