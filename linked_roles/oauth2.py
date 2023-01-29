@@ -61,3 +61,7 @@ class OAuth2Token:
     async def refresh(self) -> None:
         data = await self._client._http.refresh_oauth2_token(self.refresh_token)
         self._update(data)
+
+
+# class Scope:
+#    ...

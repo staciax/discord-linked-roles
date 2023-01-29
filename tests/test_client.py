@@ -3,9 +3,8 @@
 
 import pytest
 
+import _config as config
 from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, utils
-
-from . import _config as config
 
 
 @pytest.mark.asyncio

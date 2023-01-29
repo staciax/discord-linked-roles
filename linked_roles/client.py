@@ -9,7 +9,8 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
-from .errors import Unauthorized
+from .enums import OAuth2Scopes as Scope
+from .errors import ScopeMissing, Unauthorized
 from .http import HTTPClient
 from .oauth2 import OAuth2Token
 from .role import RoleConnection, RoleMetadataRecord
@@ -76,13 +77,22 @@ class LinkedRolesOAuth2:
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         token: Optional[str] = None,
-        scopes=('role_connections.write', 'identify'),
+        scopes: Optional[Tuple[str, ...]] = None,
         state: Optional[str] = None,
         proxy: Optional[str] = None,
         proxy_auth: aiohttp.BasicAuth = MISSING,
     ) -> None:
+        if scopes is None:
+            raise ScopeMissing('You must specify at least one scope.')
+        # ย้ายไปใน http
+        if Scope.identify not in scopes:
+            _log.warning('You must specify the identify scope.')
+        if Scope.role_connection_write not in scopes:
+            _log.warning('You must specify the role_connection_write scope.')
+
         self.application_id = client_id
         self.loop: asyncio.AbstractEventLoop = _loop
+
         self._http = HTTPClient(
             loop=self.loop,
             client_id=client_id,
@@ -175,9 +185,9 @@ class LinkedRolesOAuth2:
         """
         return self._http.get_oauth_url()
 
-    async def get_oauth2_tokens(self, code: str) -> OAuth2Token:
+    async def get_access_token(self, code: str) -> OAuth2Token:
         """
-        Gets the OAuth2 tokens.
+        Gets the access token.
         Parameters
         ----------
         code : :class:`str`
@@ -187,7 +197,7 @@ class LinkedRolesOAuth2:
         :class:`OAuth2Token`
             The OAuth2 token.
         """
-        data = await self._http.get_oauth2_tokens(code)
+        data = await self._http.get_oauth2_token(code)
         return OAuth2Token(self, data)
 
     async def register_role_metadata(
@@ -229,22 +239,26 @@ class LinkedRolesOAuth2:
         """
         return self._role_metadata.get(key)
 
-    async def fetch_user(self, tokens: OAuth2Token) -> Optional[User]:
+    async def fetch_user(self, token: OAuth2Token) -> Optional[User]:
         """
         Fetches the user.
         Parameters
         ----------
-        tokens : :class:`OAuth2Token`
+        token : :class:`OAuth2Token`
             The OAuth2 token.
         Returns
         -------
         Optional[:class:`User`]
             The user.
         """
-        data = await self._http.get_user(tokens.access_token)
+        # ย้ายไปใน http
+        if Scope.identify not in self._http.scopes:
+            raise ScopeMissing(Scope.identify)
+
+        data = await self._http.get_user(token.access_token)
         if data is None:
             return None
-        user = User(self, data, tokens=tokens)
+        user = User(self, data, token)
         self._users[int(user.id)] = user
         return user
 
@@ -262,53 +276,25 @@ class LinkedRolesOAuth2:
         """
         return self._users.get(id)
 
-    async def is_authenticated(self, tokens: OAuth2Token) -> bool:
+    async def is_authenticated(self, token: Union[OAuth2Token, str]) -> bool:
         """
         Checks if the user is authenticated.
         Parameters
         ----------
-        tokens : :class:`OAuth2Token`
+        token : Union[:class:`OAuth2Token`, :class:`str`]
             The OAuth2 token.
         Returns
         -------
         :class:`bool`
             Whether the user is authenticated.
         """
+        access_token = token.access_token if isinstance(token, OAuth2Token) else token
         try:
-            await self._http.get_user(tokens.access_token)
+            await self._http.get_user(access_token)
         except Unauthorized:
             return False
         else:
             return True
-
-    async def edit_user_role_connection(self, user: User, role_connection: RoleConnection) -> Optional[RoleConnection]:
-        """
-        Edits the user application role connection.
-        Parameters
-        ----------
-        user : :class:`User`
-            The user.
-        role : :class:`RoleConnection`
-            User's role connection.
-        Returns
-        -------
-        Optional[:class:`RoleConnection`]
-            The role connection.
-        """
-        tokens = user.get_tokens()
-        if tokens is None:
-            raise ValueError('User does not have tokens')
-        after = await self._http.put_user_application_role_connection(tokens.access_token, role_connection.to_dict())
-        if after is not None:
-            role_connection = RoleConnection.from_dict(after)
-            try:
-                await self.on_user_application_role_connection_update(
-                    user=user, before=user.__before_role_connectiion_update__ or role_connection, after=role_connection
-                )
-            except Exception as e:
-                _log.error(f'event on_user_application_role_connection_update raised an exception: {e}')
-            user.__before_role_connectiion_update__ = role_connection
-        return role_connection
 
     async def on_user_application_role_connection_update(
         self,

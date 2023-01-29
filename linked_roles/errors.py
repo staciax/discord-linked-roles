@@ -9,19 +9,17 @@ if TYPE_CHECKING:
     from aiohttp import ClientResponse
 
 __all__: Tuple[str, ...] = (
+    'LinkedRoleError',
     'HTTPException',
     'Unauthorized',
     'NotFound',
     'InternalServerError',
     'RateLimited',
-    'UserNotFound',
-    'PlatformNotFound',
-    'OAuth2Unauthorized',
-    'RoleLinkedNotFound',
+    'ScopeMissing',
 )
 
 
-class RoleLinkedException(Exception):
+class LinkedRoleError(Exception):
     """Base exception class for all linked_roles related errors."""
 
     pass
@@ -63,33 +61,9 @@ class RateLimited(HTTPException):
         super().__init__(response, message)
 
 
-class UserNotFound(RoleLinkedException):
-    """Exception that's thrown when the user is not found in the database."""
+class ScopeMissing(LinkedRoleError):
+    """Exception that's thrown when the scope is missing."""
 
-    def __init__(self, message: str) -> None:
+    def __init__(self, message: Optional[str] = None) -> None:
         super().__init__(message)
-        self.message = message
-
-
-class PlatformNotFound(RoleLinkedException):
-    """Exception that's thrown when the platform is not found in the database."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-        self.message = message
-
-
-class OAuth2Unauthorized(RoleLinkedException):
-    """Exception that's thrown when the OAuth2 token is invalid."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-        self.message = message
-
-
-class RoleLinkedNotFound(RoleLinkedException):
-    """Exception that's thrown when the role is not found in the database."""
-
-    def __init__(self, message: str) -> None:
-        super().__init__(message)
-        self.message = message
+        self.message = f'Scope is missing: {message}' if message else 'Scope is missing'

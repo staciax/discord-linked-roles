@@ -18,8 +18,6 @@ class AppRoleConnectionMetadataRecordType(int, Enum):
     datetime_greater_than_or_equal = 6
     boolean_equal = 7
     boolean_not_equal = 8
-    int = interger_equal
-    bool = boolean_equal
 
     def __int__(self):
         return self.value

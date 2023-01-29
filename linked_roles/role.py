@@ -254,8 +254,21 @@ class RoleConnection:
         self._metadata = {}
         metadata = data.get('metadata')
         if metadata is not None:
+
+            def is_int(s: str) -> bool:
+                try:
+                    int(s)
+                    return True
+                except ValueError:
+                    return False
+
             for key, value in metadata.items():
                 # TODO: check value type
+                if isinstance(value, str):
+                    if is_int(value):
+                        value = int(value)
+                    # elif value.count('-') == 2:
+                    #     value = datetime.fromisoformat(value)
                 self.add_metadata(key=key, value=value)
         return self
 

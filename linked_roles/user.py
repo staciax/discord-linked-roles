@@ -5,12 +5,11 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional, Union
 
-from .errors import RoleLinkedNotFound
 from .role import RoleConnection
 
 if TYPE_CHECKING:
     from .client import LinkedRolesOAuth2
-    from .http import User as UserPayload
+    from .http import OAuth2TokenResponse as OAuth2TokenPayload, User as UserPayload
     from .oauth2 import OAuth2Token
 
     Snowflake = Union[str, int]
@@ -90,33 +89,33 @@ class User(BaseUser):
         The client of the user.
     data : :class:`UserPayload`
         The data of the user.
-    tokens : Optional[:class:`OAuth2Token`]
-        The tokens of the user.
+    token : Optional[:class:`OAuth2Token`]
+        The token of the user.
     """
 
-    def __init__(self, client: LinkedRolesOAuth2, data: UserPayload, *, tokens: Optional[OAuth2Token] = None):
+    def __init__(self, client: LinkedRolesOAuth2, data: UserPayload, token: OAuth2Token):
         super().__init__(data)
-        self.client = client
-        self._tokens: Optional[OAuth2Token] = tokens
-        self._role_connection: Optional[RoleConnection] = None
-        self.__before_role_connectiion_update__: Optional[RoleConnection] = None
+        self._client = client
+        self._token: OAuth2Token = token
+        self._role_connectiion: Optional[RoleConnection] = None
 
-    def _update(self, data: UserPayload, tokens: Optional[OAuth2Token] = None) -> None:
+    def _update(self, data: UserPayload) -> None:
         super()._update(data)
-        if tokens is not None:
-            self._tokens = tokens
 
-    def get_role_connection(self) -> Optional[RoleConnection]:
-        """ " Returns the role connection of the user.
+    def _update_token(self, data: OAuth2TokenPayload) -> None:
+        self._token._update(data)
+
+    def get_token(self) -> OAuth2Token:
+        """Gets the token of the user.
         Returns
         -------
-        Optional[:class:`RoleConnection`]
-            The role connection of the user.
+        :class:`OAuth2Token`
+            The token of the user.
         """
-        return self._role_connection
+        return self._token
 
     async def fetch_role_connection(self) -> Optional[RoleConnection]:
-        """ " Fetches the role connection of the user.
+        """Fetches the role connection of the user.
         Returns
         -------
         Optional[:class:`RoleConnection`]
@@ -126,63 +125,17 @@ class User(BaseUser):
         :class:`RoleLinkedNotFound`
             The user is not linked role or user not oauth2.
         """
-        tokens = self.get_tokens()
-        if tokens is not None:
-            data = await self.client._http.get_user_application_role_connection(tokens.access_token)
-            if data is None:
-                raise RoleLinkedNotFound("The user is not linked role or user not oauth2.")
-            self._role_connection = RoleConnection.from_dict(data)
-        return self._role_connection
+        await self._refresh_token()
+        data = await self._client._http.get_user_application_role_connection(self._token.access_token)
+        self._role_connectiion = RoleConnection.from_dict(data)
+        return self._role_connectiion
 
-    async def get_or_fetch_role_connection(self) -> Optional[RoleConnection]:
-        """ " Gets or fetches the role connection of the user.
-        Returns
-        -------
-        Optional[:class:`RoleConnection`]
-            The role connection of the user.
-        """
-        if self._role_connection is None:
-            try:
-                await self.fetch_role_connection()
-            except RoleLinkedNotFound:
-                return None
-        return self._role_connection
+    async def _refresh_token(self, *, force: bool = False) -> None:
+        """Refreshes the token of the user."""
+        if self._token.is_expired() or force:
+            await self._token.refresh()
 
-    async def refresh_role_connection(self) -> Optional[RoleConnection]:
-        """ " Refreshes the role connection of the user.
-        Returns
-        -------
-        Optional[:class:`RoleConnection`]
-            The role connection of the user.
-        """
-        tokens = self.get_tokens()
-        if tokens is not None:
-            data = await self.client._http.get_user_application_role_connection(tokens.access_token)
-            self._role_connection = RoleConnection.from_dict(data)
-        return self._role_connection
-
-    def get_tokens(self) -> Optional[OAuth2Token]:
-        """ " Returns the tokens of the user.
-        Returns
-        -------
-        Optional[:class:`OAuth2Token`]
-            The tokens of the user.
-        """
-        if self._tokens is not None:
-            if self._tokens.is_expired():
-                self.client.loop.create_task(self._tokens.refresh())
-        return self._tokens
-
-    def set_tokens(self, value: OAuth2Token) -> None:
-        """ " Sets the tokens of the user.
-        Parameters
-        ----------
-        value : :class:`OAuth2Token`
-            The tokens of the user.
-        """
-        self._tokens = value
-
-    async def edit_role_connection(self, role: RoleConnection) -> Optional[RoleConnection]:
+    async def edit_role_connection(self, role: RoleConnection) -> RoleConnection:
         """Edits the role metadata of the user.
         Parameters
         ----------
@@ -200,14 +153,11 @@ class User(BaseUser):
             The role metadata value must be the same type.
         """
 
-        if self.__before_role_connectiion_update__ is None and self._role_connection is not None:
-            self.__before_role_connectiion_update__ = self._role_connection.copy()
-
-        if self.client.is_role_metadata_fetched():
+        if self._client.is_role_metadata_fetched():
             for metadata in role.get_all_metadata():
 
                 # verify metadata
-                get_metadata = self.client.get_role_metadata(metadata.key)
+                get_metadata = self._client.get_role_metadata(metadata.key)
 
                 if get_metadata is None:
                     raise ValueError(f'Role metadata {metadata.key!r} is not found')
@@ -216,8 +166,13 @@ class User(BaseUser):
                     if not isinstance(metadata.value, get_metadata.data_type):
                         raise TypeError(f'Role metadata {metadata.key!r} value must be {get_metadata.data_type!r}')
 
-        new_role = await self.client.edit_user_role_connection(self, role)
-        if new_role is not None:
-            if self._role_connection is not None:
-                self._role_connection = new_role
-        return self.get_role_connection()
+        # refresh token
+        await self._refresh_token()
+
+        data = await self._client._http.put_user_application_role_connection(self._token.access_token, role.to_dict())
+        after = RoleConnection.from_dict(data)
+        self._client.loop.create_task(
+            self._client.on_user_application_role_connection_update(self, self._role_connectiion or after, after)
+        )
+        self._role_connectiion = after
+        return after

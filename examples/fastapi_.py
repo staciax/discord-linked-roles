@@ -3,11 +3,11 @@ import logging
 from typing import Optional
 
 import config
-from fastapi import FastAPI, status
+from fastapi import FastAPI, HTTPException, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, OAuth2Unauthorized, RoleConnection, User, UserNotFound
+from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RoleConnection, User
 
 _log = logging.getLogger(__name__)
 
@@ -41,11 +41,31 @@ class Player(BaseModel):
     winrate: float = Field(..., ge=0, le=100)
     combat_score: int = Field(..., ge=0)
     competitive_rank: Optional[str] = Field(None)
+    verified: bool = Field(False)
     owner_id: int = Field(..., ge=0)
 
     @property
     def display_name(self) -> str:
         return self.name + '#' + self.tag
+
+
+class UserNotFound(HTTPException):
+    """Exception that's thrown when the user is not found."""
+
+    def __init__(self, user_id: Optional[int] = None):
+        super().__init__(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f'User {user_id} not found' if user_id else 'User not found',
+        )
+        self.user_id = user_id
+
+
+class RoleConnectionNotFound(HTTPException):
+    """Exception that's thrown when the role connection is not found."""
+
+    def __init__(self, user_id: int) -> None:
+        super().__init__(status_code=status.HTTP_404_NOT_FOUND, detail=f'Role connection for user {user_id} not found')
+        self.user_id = user_id
 
 
 @app.on_event('startup')
@@ -60,7 +80,7 @@ async def shutdown():
     _log.info('Shutdown complete')
 
 
-@app.get('/linked-role', status_code=status.HTTP_302_FOUND)
+@app.get('/linked-role')
 async def linked_roles():
     url = client.get_oauth_url()
     return RedirectResponse(url=url)
@@ -69,27 +89,28 @@ async def linked_roles():
 @app.get('/verified-role')
 async def verified_role(code: str):
 
-    # get tokens
-    tokens = await client.get_oauth2_tokens(code)
+    # get token
+    token = await client.get_access_token(code)
 
     # get user
-    user = await client.fetch_user(tokens=tokens)
+    user = await client.fetch_user(token)
 
     if user is None:
-        raise UserNotFound('User not found')
+        raise UserNotFound()
 
     # set role connection
     role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
     # add metadata
-    role.add_metadata(key='matches', value=10)
-    role.add_metadata(key='winrate', value=20)
-    role.add_metadata(key='combat_score', value=30)
+    role.add_metadata(key='matches', value=0)
+    role.add_metadata(key='winrate', value=0)
+    role.add_metadata(key='combat_score', value=0)
+    role.add_metadata(key='last_updated', value=datetime.datetime.utcnow())
 
     # set role metadata
     await user.edit_role_connection(role)
 
-    return '<h1>Role metadata set successfully. Please check your Discord profile.</h1>'
+    return 'Role metadata set successfully. Please check your Discord profile.'
 
 
 @app.put('/update-role-metadata')
@@ -99,20 +120,15 @@ async def update_role_metadata(player: Player):
     user = client.get_user(id=player.owner_id)
 
     if user is None:
-        raise UserNotFound(f'User with ID {player.owner_id} not found')
-
-    # get tokens to make sure they are still authenticated
-    tokens = user.get_tokens()
-    if tokens is None:
-        raise OAuth2Unauthorized(f'User ID {player.owner_id} is not authenticated')
+        raise UserNotFound(player.owner_id)
 
     # get user role connection
-    before = await user.get_or_fetch_role_connection()
+    before = await user.fetch_role_connection()
 
     if before is None:
-        raise UserNotFound(f'User with ID {player.owner_id} has no role connection')
+        raise RoleConnectionNotFound(player.owner_id)
 
-    # copy role connection to make changes
+    ## copy role connection to make changes
     role = before.copy()
 
     role.platform_username = player.display_name
@@ -123,10 +139,10 @@ async def update_role_metadata(player: Player):
     role.edit_metadata(key='matches', value=player.matches)
     role.edit_metadata(key='winrate', value=int(player.winrate))
     role.edit_metadata(key='combat_score', value=int(player.combat_score))
+    role.edit_metadata(key='last_update', value=datetime.datetime.now())
 
     # new metadata
-    role.add_or_edit_metadata(key='last_update', value=datetime.datetime.now())
-    role.add_or_edit_metadata(key='verified', value=True)
+    role.add_or_edit_metadata(key='verified', value=player.verified)
 
     # update role connection
     await user.edit_role_connection(role)
@@ -143,7 +159,11 @@ async def update_role_metadata(player: Player):
 
 
 @app.post('/authenticated')
-async def is_is_authenticated(discord_id: int):
-    # check if user is authenticated
-    user = client.get_user(discord_id)
-    return JSONResponse(status_code=status.HTTP_200_OK, content={'status': 200, 'authenticated': user is not None})
+async def is_authenticated(user_id: int):
+    user = client.get_user(user_id)
+    if user is None:
+        raise UserNotFound(user_id)
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={'status': 200, 'authenticated': await client.is_authenticated(user.get_token())},
+    )

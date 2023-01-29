@@ -54,11 +54,11 @@ async def linked_roles():
 @app.get('/verified-role')
 async def verified_role(code: str):
 
-    # get tokens
-    tokens = await client.get_oauth2_tokens(code)
+    # get token
+    token = await client.get_access_token(code)
 
     # get user
-    user = await client.fetch_user(tokens=tokens)
+    user = await client.fetch_user(token)
 
     if user is None:
         raise UserNotFound('User not found')

@@ -215,7 +215,7 @@ class HTTPClient:
         }
         return url + '?' + urlencode(params)
 
-    def get_oauth2_tokens(self, code: str) -> Response[OAuth2TokenResponse]:
+    def get_oauth2_token(self, code: str) -> Response[OAuth2TokenResponse]:
         payload = {
             'grant_type': 'authorization_code',
             'code': code,
