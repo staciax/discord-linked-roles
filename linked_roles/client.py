@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
+from .errors import Unauthorized
 from .http import HTTPClient
 from .oauth2 import OAuth2Token
 from .role import RoleConnection, RoleMetadataRecord
@@ -94,7 +95,7 @@ class LinkedRolesOAuth2:
             token=token,
         )
         self._role_metadata: Dict[str, RoleMetadataRecord] = {}
-        self._users: Dict[str, User] = {}
+        self._users: Dict[int, User] = {}
         self._role_metadat_is_fetched: bool = False
         self._is_closed: bool = False
 
@@ -244,10 +245,10 @@ class LinkedRolesOAuth2:
         if data is None:
             return None
         user = User(self, data, tokens=tokens)
-        self._users[str(user.id)] = user
+        self._users[int(user.id)] = user
         return user
 
-    def get_user(self, id: Union[str, int]) -> Optional[User]:
+    def get_user(self, id: int) -> Optional[User]:
         """
         Gets the user by it's id.
         Parameters
@@ -259,22 +260,26 @@ class LinkedRolesOAuth2:
         Optional[:class:`User`]
             The user.
         """
-        return self._users.get(str(id))
+        return self._users.get(id)
 
-    def remove_user(self, user: Union[str, int, User]) -> None:
+    async def is_authenticated(self, tokens: OAuth2Token) -> bool:
         """
-        Removes the user.
+        Checks if the user is authenticated.
         Parameters
         ----------
-        user : Union[:class:`str`, :class:`int`, :class:`User`]
-            The user.
+        tokens : :class:`OAuth2Token`
+            The OAuth2 token.
+        Returns
+        -------
+        :class:`bool`
+            Whether the user is authenticated.
         """
-        if isinstance(user, User):
-            user = user.id
         try:
-            del self._users[str(user)]
-        except KeyError:
-            pass
+            await self._http.get_user(tokens.access_token)
+        except Unauthorized:
+            return False
+        else:
+            return True
 
     async def edit_user_role_connection(self, user: User, role_connection: RoleConnection) -> Optional[RoleConnection]:
         """
