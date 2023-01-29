@@ -1,12 +1,13 @@
 import asyncio
 
-import _config
+import config
+
 from linked_roles import AppRoleConnectionMetadataRecordType as RoleMetadataType, LinkedRolesOAuth2, RoleMetadataRecord
 
 
 async def main():
 
-    client = LinkedRolesOAuth2(client_id=_config.DISCORD_CLIENT_ID, token=_config.DISCORD_TOKEN)
+    client = LinkedRolesOAuth2(client_id=config.DISCORD_CLIENT_ID, token=config.DISCORD_TOKEN)
 
     async with client:
 

@@ -2,11 +2,11 @@ import datetime
 import logging
 from typing import Optional
 
+import config
 from fastapi import FastAPI, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from pydantic import BaseModel, Field
 
-import _config
 from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, OAuth2Unauthorized, RoleConnection, User, UserNotFound
 
 _log = logging.getLogger(__name__)
@@ -17,12 +17,12 @@ app = FastAPI(title='Linked Roles API', version='1.1.0')
 class LinkedRolesClient(LinkedRolesOAuth2):
     def __init__(self):
         super().__init__(
-            client_id=_config.DISCORD_CLIENT_ID,
-            client_secret=_config.DISCORD_CLIENT_SECRET,
-            redirect_uri=_config.DISCORD_REDIRECT_URI,
-            token=_config.DISCORD_TOKEN,
+            client_id=config.DISCORD_CLIENT_ID,
+            client_secret=config.DISCORD_CLIENT_SECRET,
+            redirect_uri=config.DISCORD_REDIRECT_URI,
+            token=config.DISCORD_TOKEN,
             scopes=(OAuth2Scopes.role_connection_write, OAuth2Scopes.identify),
-            state=_config.COOKIE_SECRET,
+            state=config.COOKIE_SECRET,
         )
 
     async def on_user_application_role_connection_update(
@@ -60,7 +60,7 @@ async def shutdown():
     _log.info('Shutdown complete')
 
 
-@app.get('/v1/linked-role', status_code=status.HTTP_302_FOUND)
+@app.get('/linked-role', status_code=status.HTTP_302_FOUND)
 async def linked_roles():
     url = client.get_oauth_url()
     return RedirectResponse(url=url)
@@ -92,7 +92,7 @@ async def verified_role(code: str):
     return '<h1>Role metadata set successfully. Please check your Discord profile.</h1>'
 
 
-@app.put('/v1/update-role-metadata')
+@app.put('/update-role-metadata')
 async def update_role_metadata(player: Player):
 
     # get user to make sure they are still connected
