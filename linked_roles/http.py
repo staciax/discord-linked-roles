@@ -14,7 +14,8 @@ from urllib.parse import quote as _uriquote, urlencode
 import aiohttp
 
 from . import utils
-from .errors import HTTPException, InternalServerError, NotFound, RateLimited, Unauthorized
+from .enums import OAuth2Scopes
+from .errors import HTTPException, InternalServerError, NotFound, RateLimited, ScopeMissing, Unauthorized
 
 if TYPE_CHECKING:
     T = TypeVar('T')
@@ -125,12 +126,16 @@ class HTTPClient:
         client_id: str,
         client_secret: Optional[str],
         redirect_uri: Optional[str],
-        scopes: Tuple[str, ...],
+        scopes: Tuple[str, ...] = (),
         state: Optional[str] = None,
         proxy: Optional[str] = None,
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         token: Optional[str] = None,
     ) -> None:
+        if OAuth2Scopes.identify not in scopes:
+            _log.warning('You must specify the identify scope.')
+        if OAuth2Scopes.role_connection_write not in scopes:
+            _log.warning('You must specify the role_connection_write scope.')
         self.loop: asyncio.AbstractEventLoop = loop
         self.client_id = client_id
         self.client_secret = client_secret
@@ -146,6 +151,7 @@ class HTTPClient:
         method = route.method
         url = route.url
         headers = kwargs.pop('headers', {})
+        kwargs['verify_ssl'] = route.verify
 
         response: Optional[aiohttp.ClientResponse] = None
         data: Optional[Union[Dict[str, Any], str]] = None
@@ -237,6 +243,10 @@ class HTTPClient:
         return self.request(Route('POST', '/oauth2/token'), data=payload, headers=headers)
 
     def get_user(self, access_token: str) -> Response[User]:
+
+        if OAuth2Scopes.identify not in self.scopes:
+            raise ScopeMissing('identify')
+
         headers = {'Content-Type': 'application/json', 'Authorization': f'Bearer {access_token}'}
         return self.request(Route('GET', '/users/@me'), headers=headers)
 
@@ -259,6 +269,10 @@ class HTTPClient:
         return self.request(r, json=payload, headers=headers)
 
     def get_user_application_role_connection(self, access_token: str) -> Response[UserRoleConnection]:
+
+        if OAuth2Scopes.role_connection_write not in self.scopes:
+            raise ScopeMissing('role_connection_write')
+
         r = Route('GET', '/users/@me/applications/{application_id}/role-connection', application_id=self.client_id)
         headers = {
             'Content-Type': 'application/json',
@@ -269,6 +283,10 @@ class HTTPClient:
     def put_user_application_role_connection(
         self, access_token: str, payload: Mapping[str, Any]
     ) -> Response[UserRoleConnection]:
+
+        if OAuth2Scopes.role_connection_write not in self.scopes:
+            raise ScopeMissing('role_connection_write')
+
         r = Route('PUT', '/users/@me/applications/{application_id}/role-connection', application_id=self.client_id)
         headers = {
             'Content-Type': 'application/json',

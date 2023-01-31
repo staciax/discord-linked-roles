@@ -127,7 +127,8 @@ class User(BaseUser):
         """
         await self._refresh_token()
         data = await self._client._http.get_user_application_role_connection(self._token.access_token)
-        self._role_connectiion = RoleConnection.from_dict(data)
+        if data:
+            self._role_connectiion = RoleConnection.from_dict(data)
         return self._role_connectiion
 
     async def _refresh_token(self, *, force: bool = False) -> None:

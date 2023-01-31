@@ -98,17 +98,20 @@ async def verified_role(code: str):
     if user is None:
         raise UserNotFound()
 
-    # set role connection
-    role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
+    role = await user.fetch_role_connection()
+    if role is None:
 
-    # add metadata
-    role.add_metadata(key='matches', value=0)
-    role.add_metadata(key='winrate', value=0)
-    role.add_metadata(key='combat_score', value=0)
-    role.add_metadata(key='last_updated', value=datetime.datetime.utcnow())
+        # set default role metadata
+        role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
-    # set role metadata
-    await user.edit_role_connection(role)
+        # add metadata
+        role.add_metadata(key='matches', value=0)
+        role.add_metadata(key='winrate', value=0)
+        role.add_metadata(key='combat_score', value=0)
+        role.add_metadata(key='last_update', value=datetime.datetime.utcnow())
+
+        # set role metadata
+        await user.edit_role_connection(role)
 
     return 'Role metadata set successfully. Please check your Discord profile.'
 

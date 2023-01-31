@@ -9,8 +9,7 @@ from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, Union
 
 import aiohttp
 
-from .enums import OAuth2Scopes as Scope
-from .errors import ScopeMissing, Unauthorized
+from .errors import Unauthorized
 from .http import HTTPClient
 from .oauth2 import OAuth2Token
 from .role import RoleConnection, RoleMetadataRecord
@@ -77,22 +76,13 @@ class LinkedRolesOAuth2:
         client_secret: Optional[str] = None,
         redirect_uri: Optional[str] = None,
         token: Optional[str] = None,
-        scopes: Optional[Tuple[str, ...]] = None,
+        scopes: Tuple[str, ...] = (),
         state: Optional[str] = None,
         proxy: Optional[str] = None,
         proxy_auth: aiohttp.BasicAuth = MISSING,
     ) -> None:
-        if scopes is None:
-            raise ScopeMissing('You must specify at least one scope.')
-        # ย้ายไปใน http
-        if Scope.identify not in scopes:
-            _log.warning('You must specify the identify scope.')
-        if Scope.role_connection_write not in scopes:
-            _log.warning('You must specify the role_connection_write scope.')
-
         self.application_id = client_id
         self.loop: asyncio.AbstractEventLoop = _loop
-
         self._http = HTTPClient(
             loop=self.loop,
             client_id=client_id,
@@ -251,10 +241,6 @@ class LinkedRolesOAuth2:
         Optional[:class:`User`]
             The user.
         """
-        # ย้ายไปใน http
-        if Scope.identify not in self._http.scopes:
-            raise ScopeMissing(Scope.identify)
-
         data = await self._http.get_user(token.access_token)
         if data is None:
             return None
