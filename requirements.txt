@@ -1,1 +1,1 @@
-aiohttp>=3.8.x,<4
+aiohttp>=3.7.4,<4
