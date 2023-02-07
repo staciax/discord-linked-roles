@@ -7,7 +7,7 @@ import re
 from datetime import datetime
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional, Tuple, Type, TypeVar, Union
 
-from .enums import AppRoleConnectionMetadataRecordType as RoleMetadataType
+from .enums import RoleMetadataType
 
 if TYPE_CHECKING:
     from typing_extensions import Self

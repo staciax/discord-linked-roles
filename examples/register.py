@@ -2,7 +2,7 @@ import asyncio
 
 import config
 
-from linked_roles import AppRoleConnectionMetadataRecordType as RoleMetadataType, LinkedRolesOAuth2, RoleMetadataRecord
+from linked_roles import LinkedRolesOAuth2, RoleMetadataRecord, RoleMetadataType
 
 
 async def main():
@@ -44,7 +44,7 @@ async def main():
             ),
         )
 
-        records = await client.register_role_metadata(records=records)
+        records = await client.register_role_metadata(records=records, force=True)
         print(records)
 
 

@@ -63,16 +63,19 @@ async def verified_role(code: str):
     if user is None:
         raise UserNotFound('User not found')
 
-    # set role connection
-    role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
+    role = await user.fetch_role_connection()
+    
+    if role is None:
+        # set role connection
+        role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
-    # add metadata
-    role.add_metadata(key='matches', value=10)
-    role.add_metadata(key='winrate', value=20)
-    role.add_metadata(key='combat_score', value=30)
+        # add metadata
+        role.add_metadata(key='matches', value=10)
+        role.add_metadata(key='winrate', value=20)
+        role.add_metadata(key='combat_score', value=30)
 
-    # set role metadata
-    await user.edit_role_connection(role)
+        # set role metadata
+        await user.edit_role_connection(role)
 
     return 'Role metadata set successfully. Please check your Discord profile.'
 ```
@@ -82,7 +85,7 @@ async def verified_role(code: str):
 import asyncio
 
 import config
-from linked_roles import AppRoleConnectionMetadataRecordType as RoleMetadataType, LinkedRolesOAuth2, RoleMetadataRecord
+from linked_roles import RoleMetadataType, LinkedRolesOAuth2, RoleMetadataRecord
 
 
 async def main():
@@ -110,7 +113,7 @@ async def main():
             )
         )
 
-        records = await client.register_role_metadata(records=records)
+        records = await client.register_role_metadata(records=records, force=True)
         print(records)
 
 

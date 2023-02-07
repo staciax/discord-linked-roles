@@ -6,10 +6,10 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Tuple, Type, Union
 
-__all__: Tuple[str, ...] = ('AppRoleConnectionMetadataRecordType', 'OAuth2Scopes')
+__all__: Tuple[str, ...] = ('RoleConnectionMetadataType', 'OAuth2Scopes')
 
 
-class AppRoleConnectionMetadataRecordType(int, Enum):
+class RoleMetadataType(int, Enum):
     interger_less_than_or_equal = 1
     interger_greater_than_or_equal = 2
     interger_equal = 3
