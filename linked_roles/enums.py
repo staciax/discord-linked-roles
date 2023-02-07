@@ -6,7 +6,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Tuple, Type, Union
 
-__all__: Tuple[str, ...] = ('RoleConnectionMetadataType', 'OAuth2Scopes')
+__all__: Tuple[str, ...] = ('RoleMetadataType', 'OAuth2Scopes')
 
 
 class RoleMetadataType(int, Enum):
