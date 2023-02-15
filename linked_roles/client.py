@@ -16,7 +16,12 @@ from .role import RoleConnection, RoleMetadataRecord
 from .user import User
 from .utils import MISSING
 
-__all__: Tuple[str, ...] = ('LinkedRolesOAuth2',)
+# fmt: off
+__all__: Tuple[str, ...] = (
+    'LinkedRolesOAuth2',
+    'Client'
+)
+# fmt: on
 
 _log = logging.getLogger(__name__)
 
@@ -300,3 +305,6 @@ class LinkedRolesOAuth2:
             The role connection after the update.
         """
         pass
+
+
+Client = LinkedRolesOAuth2
