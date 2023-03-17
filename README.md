@@ -24,18 +24,17 @@ $ pip install -U linked-roles
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
 
-import config
-from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, RoleConnection, UserNotFound
+from linked_roles import LinkedRolesOAuth2, RoleConnection, UserNotFound
 
-app = FastAPI(title='Linked Roles OAuth2')
+app = FastAPI(title='Linked Roles')
 
 client = LinkedRolesOAuth2(
-    client_id=config.DISCORD_CLIENT_ID,
-    client_secret=config.DISCORD_CLIENT_SECRET,
-    redirect_uri=config.DISCORD_REDIRECT_URI,
-    # token=config.DISCORD_TOKEN, # Optinal for Resgister
-    scopes=(OAuth2Scopes.role_connection_write, OAuth2Scopes.identify),
-    state=config.COOKIE_SECRET,
+    client_id='client_id',
+    client_secret='client_secret',
+    redirect_uri='http://localhost:8000/callback',
+    # token='discord_token',
+    scopes=('role_connection_write', 'identify'),
+    state='cookie_secret'
 )
 
 @app.on_event('startup')
@@ -84,13 +83,11 @@ async def verified_role(code: str):
 ```py
 import asyncio
 
-import config
 from linked_roles import RoleMetadataType, LinkedRolesOAuth2, RoleMetadataRecord
-
 
 async def main():
 
-    client = LinkedRolesOAuth2(client_id=config.DISCORD_CLIENT_ID, token=config.DISCORD_TOKEN)
+    client = LinkedRolesOAuth2(client_id='client_id', token='discord_token')
 
     async with client:
 
@@ -121,13 +118,6 @@ if __name__ == '__main__':
     asyncio.run(main())
 
 ```
-## Config Example:
-```py
-DISCORD_TOKEN = '<your bot token>'
-DISCORD_CLIENT_ID = '<your client id>'
-DISCORD_CLIENT_SECRET = '<your client secret>'
-DISCORD_REDIRECT_URI = 'http://localhost:8000/verified-role'  # example redirect uri
-COOKIE_SECRET = '<your cookie secret>'
 
 # cookie secret can be generated with:
 import uuid
@@ -144,9 +134,6 @@ import uuid
 - [ ] localizations support
 
 <!-- code style, inspiration is discord.py -->
-## Code Style Inspiration
-<!-- https://github.com/Rapptz/discord.py -->
-- [discord.py](https://github.com/Rapptz/discord.py)
 
 ## License
 licensed under the [MIT license](LICENSE).
