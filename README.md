@@ -31,7 +31,7 @@ app = FastAPI(title='Linked Roles')
 client = LinkedRolesOAuth2(
     client_id='client_id',
     client_secret='client_secret',
-    redirect_uri='http://localhost:8000/callback',
+    redirect_uri='http://localhost:8000/verified-role',
     # token='discord_token',
     scopes=('role_connection_write', 'identify'),
     state='cookie_secret'
