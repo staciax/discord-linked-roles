@@ -113,25 +113,25 @@ async def main():
         records = await client.register_role_metadata(records=records, force=True)
         print(records)
 
-
 if __name__ == '__main__':
     asyncio.run(main())
 
 ```
 
-# cookie secret can be generated with:
+## Cookie secret can be generated with:
+```py
 import uuid
 >> uuid.uuid4().hex
 ```
-
+<!--
 ## More Examples:
-- fastapi more examples: [examples/fastapi](examples/fastapi_.py)
-
+- fastapi more examples: [examples](examples)
 ## TODO:
 - [ ] more examples
 - [ ] documentation
 - [ ] database support (postgresql, sqlite, etc.) ?
 - [ ] localizations support
+-->
 
 <!-- code style, inspiration is discord.py -->
 
