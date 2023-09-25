@@ -132,10 +132,10 @@ class HTTPClient:
         proxy_auth: Optional[aiohttp.BasicAuth] = None,
         token: Optional[str] = None,
     ) -> None:
-        if OAuth2Scopes.identify not in scopes:
-            _log.warning('You must specify the identify scope.')
-        if OAuth2Scopes.role_connection_write not in scopes:
-            _log.warning('You must specify the role_connection_write scope.')
+        if OAuth2Scopes.identify.value not in scopes:
+            _log.warning(f'You must specify the {OAuth2Scopes.identify.value} scope.')
+        if OAuth2Scopes.role_connection_write.value not in scopes:
+            _log.warning(f'You must specify the {OAuth2Scopes.role_connection_write.value} scope.')
         self.loop: asyncio.AbstractEventLoop = loop
         self.client_id = client_id
         self.client_secret = client_secret
@@ -210,7 +210,7 @@ class HTTPClient:
 
     def get_oauth_url(self) -> str:
         state = self.state or uuid.uuid4().hex
-        url = 'https://discord.com/api/oauth2/authorize'
+        url = 'https://discord.com/oauth2/authorize'
         params = {
             'client_id': self.client_id,
             'redirect_uri': self.redirect_uri,
