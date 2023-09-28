@@ -33,8 +33,7 @@ client = LinkedRolesOAuth2(
     client_secret='client_secret',
     redirect_uri='http://localhost:8000/verified-role',
     # token='discord_token',
-    scopes=('role_connection_write', 'identify'),
-    state='cookie_secret'
+    scopes=('role_connections.write', 'identify'),
 )
 
 @app.on_event('startup')
