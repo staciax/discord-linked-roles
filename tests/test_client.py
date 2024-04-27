@@ -1,9 +1,9 @@
 # Copyright (c) 2023-present staciax
 # Licensed under the MIT license. Refer to the LICENSE file in the project root for more information.
 
+import _config as config
 import pytest
 
-import _config as config
 from linked_roles import LinkedRolesOAuth2, OAuth2Scopes, utils
 
 

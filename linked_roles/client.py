@@ -16,12 +16,10 @@ from .role import RoleConnection, RoleMetadataRecord
 from .user import User
 from .utils import MISSING
 
-# fmt: off
-__all__: Tuple[str, ...] = (
+__all__ = (
     'LinkedRolesOAuth2',
-    'Client'
+    'Client',
 )
-# fmt: on
 
 _log = logging.getLogger(__name__)
 
@@ -32,6 +30,7 @@ if TYPE_CHECKING:
     from typing_extensions import Self
 
     RoleMetadataRecordType = Union[int, bool, datetime]
+
 
 # -- from discord.py
 # link: https://github.com/Rapptz/discord.py/blob/9ea6ee8887b65f21ccc0bcf013786f4ea61ba608/discord/client.py#L111

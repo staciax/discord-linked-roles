@@ -2,27 +2,43 @@
 requires = ["setuptools", "wheel"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
-line-length = 125
-skip-string-normalization = true
-
-[tool.isort]
-profile = "black"
-combine_as_imports = true
-combine_star = true
-line_length = 125
-
 [tool.pyright]
-include = ["linked_roles"]
-exclude = [
-    "**/__pycache__",
-    "build",
-    "dist"
-]
-reportUnnecessaryTypeIgnoreComment = "warning"
-reportUnusedImport = "error"
+exclude = ["alembic"]
 pythonVersion = "3.8"
 typeCheckingMode = "basic"
+reportUnnecessaryTypeIgnoreComment = "warning"
+reportMissingParameterType = "error"
+reportUnusedVariable = "warning"
+
+[tool.ruff]
+line-length = 120
+target-version = "py38"
+
+[tool.ruff.format]
+quote-style = "single"
+skip-magic-trailing-comma = false
+
+[tool.ruff.lint]
+select = [
+  "E",  # pycodestyle errors
+  "W",  # pycodestyle warnings
+  "F",  # pyflakes
+  "I",  # isort
+  "B",  # flake8-bugbear
+  "C4", # flake8-comprehensions
+  "UP", # pyupgrade
+]
+
+ignore = [
+  "E501", # line too long, handled by black
+]
+
+[tool.ruff.lint.isort]
+combine-as-imports = true
 
 [tool.pytest.ini_options]
 asyncio_mode = "strict"
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true

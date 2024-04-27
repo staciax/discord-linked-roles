@@ -8,7 +8,20 @@ import asyncio
 import logging
 import re
 import uuid
-from typing import TYPE_CHECKING, Any, ClassVar, Coroutine, Dict, List, Mapping, Optional, Tuple, TypedDict, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    ClassVar,
+    Coroutine,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Tuple,
+    TypedDict,
+    TypeVar,
+    Union,
+)
 from urllib.parse import quote as _uriquote, urlencode
 
 import aiohttp
@@ -21,7 +34,11 @@ if TYPE_CHECKING:
     T = TypeVar('T')
     Response = Coroutine[Any, Any, T]
 
-__all__: Tuple[str, ...] = ('HTTPClient',)
+# fmt: off
+__all__ = (
+    'HTTPClient',
+)
+# fmt: on
 
 _log = logging.getLogger(__name__)
 
@@ -90,7 +107,6 @@ def validate_redirect_url(url: Optional[str]) -> Optional[str]:
 
 
 class Route:
-
     """Represents an HTTP route."""
 
     BASE: ClassVar[str] = 'https://discord.com/api/v10'
@@ -110,14 +126,12 @@ class Route:
         url = self.BASE + self.path
 
         if parameters:
-
             url = url.format_map({k: _uriquote(v) if isinstance(v, str) else v for k, v in parameters.items()})
 
         self.url: str = url
 
 
 class HTTPClient:
-
     """Represents an HTTP client for interacting with the Discord API."""
 
     def __init__(
@@ -243,7 +257,6 @@ class HTTPClient:
         return self.request(Route('POST', '/oauth2/token'), data=payload, headers=headers)
 
     def get_user(self, access_token: str) -> Response[User]:
-
         if OAuth2Scopes.identify not in self.scopes:
             raise ScopeMissing('identify')
 
@@ -269,7 +282,6 @@ class HTTPClient:
         return self.request(r, json=payload, headers=headers)
 
     def get_user_application_role_connection(self, access_token: str) -> Response[UserRoleConnection]:
-
         if OAuth2Scopes.role_connection_write not in self.scopes:
             raise ScopeMissing('role_connection_write')
 
@@ -283,7 +295,6 @@ class HTTPClient:
     def put_user_application_role_connection(
         self, access_token: str, payload: Mapping[str, Any]
     ) -> Response[UserRoleConnection]:
-
         if OAuth2Scopes.role_connection_write not in self.scopes:
             raise ScopeMissing('role_connection_write')
 

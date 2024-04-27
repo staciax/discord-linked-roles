@@ -88,7 +88,6 @@ async def linked_roles():
 
 @app.get('/verified-role')
 async def verified_role(code: str):
-
     # get token
     token = await client.get_access_token(code)
 
@@ -100,7 +99,6 @@ async def verified_role(code: str):
 
     role = await user.fetch_role_connection()
     if role is None:
-
         # set default role metadata
         role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
 
@@ -118,7 +116,6 @@ async def verified_role(code: str):
 
 @app.put('/update-role-metadata')
 async def update_role_metadata(player: Player):
-
     # get user to make sure they are still connected
     user = client.get_user(id=player.owner_id)
 

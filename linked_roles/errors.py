@@ -3,12 +3,12 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Any, Dict, Optional, Tuple, Union
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union
 
 if TYPE_CHECKING:
     from aiohttp import ClientResponse
 
-__all__: Tuple[str, ...] = (
+__all__ = (
     'LinkedRoleError',
     'HTTPException',
     'Unauthorized',

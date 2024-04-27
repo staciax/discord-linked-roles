@@ -13,9 +13,10 @@ if TYPE_CHECKING:
 
 __all__: Tuple[str, ...] = ('json_or_text', 'MISSING')
 
+
 # source: https://github.com/Rapptz/discord.py/blob/master/discord/http.py
 async def json_or_text(response: ClientResponse) -> Union[Dict[str, Any], str]:
-    text = await response.text(encoding="utf-8")
+    text = await response.text(encoding='utf-8')
     try:
         if response.headers['content-type'] == 'application/json':
             return json.loads(text)

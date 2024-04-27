@@ -156,7 +156,6 @@ class User(BaseUser):
 
         if self._client.is_role_metadata_fetched():
             for metadata in role.get_all_metadata():
-
                 # verify metadata
                 get_metadata = self._client.get_role_metadata(metadata.key)
 

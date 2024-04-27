@@ -6,11 +6,9 @@ from linked_roles import LinkedRolesOAuth2, RoleMetadataRecord, RoleMetadataType
 
 
 async def main():
-
     client = LinkedRolesOAuth2(client_id=config.DISCORD_CLIENT_ID, token=config.DISCORD_TOKEN)
 
     async with client:
-
         records = (
             RoleMetadataRecord(
                 key='matches',

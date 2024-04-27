@@ -5,7 +5,7 @@ from __future__ import annotations
 
 import re
 from datetime import datetime
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional, Tuple, Type, TypeVar, Union
+from typing import TYPE_CHECKING, Any, Dict, Generic, List, Mapping, Optional, Type, TypeVar, Union
 
 from .enums import RoleMetadataType
 
@@ -16,7 +16,7 @@ if TYPE_CHECKING:
 
     MetadataDataType = Union[str, int, bool, datetime]
 
-__all__: Tuple[str, ...] = (
+__all__ = (
     'RoleConnection',
     'RoleMetadata',
     'RoleMetadataRecord',
@@ -345,8 +345,8 @@ class RoleMetadataRecord(Generic[RoleConnectionT]):
         if not isinstance(type, RoleMetadataType):
             try:
                 type = RoleMetadataType(type)
-            except ValueError:
-                raise ValueError(f'{type!r} is not a valid RoleMetadataType')
+            except ValueError as e:
+                raise ValueError(f'{type!r} is not a valid RoleMetadataType') from e
         self._type: RoleMetadataType = type
         self.name_localizations = name_localizations
         self.description_localizations: Optional[Dict[str, Any]] = description_localizations
@@ -355,10 +355,10 @@ class RoleMetadataRecord(Generic[RoleConnectionT]):
     def __repr__(self) -> str:
         return f'<RoleMetadata key={self.key!r} name={self.name!r} type={self._type!r}>'
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         return isinstance(other, RoleMetadataRecord) and self.key == other.key
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
 
     @property
