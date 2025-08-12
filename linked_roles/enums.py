@@ -6,14 +6,14 @@ from datetime import datetime
 from enum import Enum
 from typing import Optional, Tuple, Type, Union
 
-__all__: Tuple[str, ...] = ('RoleMetadataType', 'OAuth2Scopes')
+__all__: Tuple[str, ...] = ("RoleMetadataType", "OAuth2Scopes")
 
 
 class RoleMetadataType(int, Enum):
-    interger_less_than_or_equal = 1
-    interger_greater_than_or_equal = 2
-    interger_equal = 3
-    interger_not_equal = 4
+    integer_less_than_or_equal = 1
+    integer_greater_than_or_equal = 2
+    integer_equal = 3
+    integer_not_equal = 4
     datetime_less_than_or_equal = 5
     datetime_greater_than_or_equal = 6
     boolean_equal = 7
@@ -33,8 +33,8 @@ class RoleMetadataType(int, Enum):
 
 
 class OAuth2Scopes(str, Enum):
-    email = 'email'
-    guilds = 'guilds'
-    identify = 'identify'
-    role_connection_write = 'role_connections.write'
+    email = "email"
+    guilds = "guilds"
+    identify = "identify"
+    role_connection_write = "role_connections.write"
     # https://discord.com/developers/docs/topics/oauth2
