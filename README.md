@@ -15,11 +15,13 @@
 <!-- https://github.com/catppuccin color style -->
 
 ## Installation
+
 ```sh
 $ pip install -U linked-roles
 ```
 
 ## FastAPI Example:
+
 ```py
 from fastapi import FastAPI
 from fastapi.responses import RedirectResponse
@@ -62,7 +64,7 @@ async def verified_role(code: str):
         raise UserNotFound('User not found')
 
     role = await user.fetch_role_connection()
-    
+
     if role is None:
         # set role connection
         role = RoleConnection(platform_name='VALORANT', platform_username=str(user))
@@ -79,6 +81,7 @@ async def verified_role(code: str):
 ```
 
 ## Register Example:
+
 ```py
 import asyncio
 
@@ -99,13 +102,13 @@ async def main():
             RoleMetadataRecord(
                 key='winrate',
                 name='Win Rate',
-                type=RoleMetadataType.interger_greater_than_or_equal,  # Union Between int and RoleMetadataType
+                type=RoleMetadataType.integer_greater_than_or_equal,  # Union Between int and RoleMetadataType
             ),
             RoleMetadataRecord(
                 key='combat_score',
                 name='Combat Score',
                 description='Combat score this season', # description is optional (default: '...')
-                type=RoleMetadataType.interger_greater_than_or_equal,
+                type=RoleMetadataType.integer_greater_than_or_equal,
             )
         )
 
@@ -118,10 +121,12 @@ if __name__ == '__main__':
 ```
 
 ## Cookie secret can be generated with:
+
 ```py
 import uuid
 >> uuid.uuid4().hex
 ```
+
 <!--
 ## More Examples:
 - fastapi more examples: [examples](examples)
@@ -135,4 +140,5 @@ import uuid
 <!-- code style, inspiration is discord.py -->
 
 ## License
+
 licensed under the [MIT license](LICENSE).
